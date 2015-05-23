@@ -68,7 +68,8 @@ var Styles = {
 	NORMALIZED: 2,
 	ONE_NORMALIZED: 3
 }
-var shape, grid, currentTool = Tools.LINE, currentStyle = Styles.ARRAY;
+var shape, grid, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY;
+var HANDLE_RADIUS = 7;
 
 
 
@@ -177,7 +178,6 @@ Shape.prototype = {
 		}
 		ctx.save();
 		ctx.beginPath();
-
 		for (var i = 0; i <= this.last; i++) {
 			var p = grid_.toPoint(this.points[i]);
 			if (i === 0) {
@@ -186,8 +186,21 @@ Shape.prototype = {
 			}
 			ctx.lineTo(p.x, p.y);
 		}
-
 		ctx.stroke();
+
+		// Draw vertex handles
+		ctx.fillStyle = 'green';
+        
+		for (var i = 0; i <= this.last; i++) {
+			var p = grid_.toPoint(this.points[i]);
+			ctx.beginPath();
+			ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, 2 * Math.PI, false);
+			ctx.fill();
+			ctx.stroke();
+		}
+		
+
+		
 		ctx.restore();
 	}
 };
