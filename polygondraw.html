@@ -76,7 +76,7 @@ var Styles = {
 }
 var shape, grid, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY;
 
-var HANDLE_RADIUS = 4;
+var HANDLE_RADIUS = 2;
 var handleIsSelected = false;
 var selectedHandleIndex = 0;
 
@@ -199,7 +199,7 @@ function closestPoint(searchPoint) {
 	var matchIndex = null;
 
 	// Find the nearest line segment to the click
-	for (var i=0; i<len-1; i++){
+	for (var i=0; i<len; i++){
 		var distance = pointDistance(searchPoint, shape.points[i]);
 		if(distance<shortestDistance){
 			shortestDistance = distance;
@@ -218,6 +218,22 @@ Shape.prototype = {
 	reset: function() {
 		this.points = [];
 		this.last = -1;
+
+		// Can supply initial point data in URL following "?".
+		// For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
+	    var pointsString = window.location.search.substring(1);
+	    if (pointsString != ""){
+	    	var pointArray = JSON.parse(pointsString);
+	    	if (pointArray.length % 2 === 0){
+	    		for(var i=0,len=pointArray.length; i<len; i+=2){
+	    			this.points.push({x:pointArray[i],y:pointArray[i+1]});
+	    		}
+	    		this.last = this.points.length - 1;
+	    		// Start in MOVE mode if starting with an existing dataset
+	    		currentTool = Tools.MOVE;
+	    	}
+	    	
+	    }
 	},
 
 	addPoint: function(p) {
@@ -339,8 +355,8 @@ Grid.prototype = {
 		this.ctx.stroke();
 
 		this.ctx.beginPath();
-		this.ctx.fillStyle = "#00f";
-		this.ctx.arc(this.origo.x * this.size + 0.5, this.origo.y * this.size + 0.5, 3, 0, 2*Math.PI);
+		this.ctx.fillStyle = "#aaa";
+		this.ctx.arc(this.origo.x * this.size + 0.5, this.origo.y * this.size + 0.5, 5, 0, 2*Math.PI);
 		this.ctx.fill();
 
 		this.ctx.restore();
@@ -519,8 +535,8 @@ document.getElementById("copy").onclick = function() {
 	text.select();
 }
 document.getElementById("refresh").onclick = function() {
-	shape = new Shape();
 	currentTool = Tools.LINE;
+	shape = new Shape();
 	grid.draw();
 	shape.draw(grid);
 	drawPoints();
