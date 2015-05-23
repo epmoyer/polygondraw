@@ -575,6 +575,29 @@ document.getElementById("refresh").onclick = function() {
 document.getElementById("undo").onclick = function() {
 }
 
+// Keyboard handler
+document.addEventListener("keydown", function(evt) {
+	console.log("Key Code:" + evt.keyCode); 
+	switch(evt.keyCode){
+		case 77: // "M"
+			currentTool = Tools.MOVE;
+			break;
+		case 76: // "L"
+			currentTool = Tools.LINE;
+			break;
+		case 65: // "A"
+			currentTool = Tools.ADD;
+			break;
+		case 67: // "C"
+			currentTool = Tools.CUT;
+			break;
+		case 79: // "O"
+			currentTool = Tools.ORIGIN;
+			break;
+	}
+});
+
+
 }).call();
 </script>
 </body>
