@@ -7,7 +7,7 @@
 	<meta name="viewport" content="user-scalable=no" />
 	<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 	
-	<style>*{padding:0;margin:0}input:focus,textarea:focus{outline:0}input[type=range]{-webkit-appearance:none;background-color:#ccc;height:2px;margin:5px 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;border-radius:6px;border:1px solid #ccc;background-color:#fff;width:12px;height:12px}canvas{background-color:#fff;display:block;position:absolute;margin:auto;top:5px;left:5px;border:1px solid #ccc}div{display:block;position:absolute;right:5px;top:5px;width:290px;border:1px solid #ccc}ul{position:absolute}ol{border:1px solid #ccc;width:268px;position:absolute}ol li{padding:1px 10px;border:none;border-right:1px solid #e0e0e0}li{color:#555;display:inline-block;border:1px solid #e0e0e0;padding:5px 10px;margin-right:-1px;cursor:pointer}li:hover{background-color:#ececec}ul li:first-child{border-top-left-radius:4px;border-bottom-left-radius:4px}ul li:last-child{border-top-right-radius:4px;border-bottom-right-radius:4px}input,textarea{position:absolute;bottom:10px;right:10px;width:270px;max-width:270px;border:1px solid #ccc;box-sizing:border-box;-moz-box-sizing:border-box}textarea{resize:none;top:50px;padding:10px;bottom:110px}textarea:focus{outline:0}label{border:1px solid #ccc}</style>
+	<style>*{padding:0;margin:0}input:focus,textarea:focus{outline:0}input[type=range]{-webkit-appearance:none;background-color:#ccc;height:2px;margin:5px 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;border-radius:6px;border:1px solid #ccc;background-color:#fff;width:12px;height:12px}canvas{background-color:#fff;display:block;position:absolute;margin:auto;top:5px;left:5px;border:1px solid #ccc}div{display:block;position:absolute;right:5px;top:5px;width:390px;border:1px solid #ccc}ul{position:absolute}ol{border:1px solid #ccc;width:368px;position:absolute}ol li{padding:1px 10px;border:none;border-right:1px solid #e0e0e0}li{color:#555;display:inline-block;border:1px solid #e0e0e0;padding:5px 10px;margin-right:-1px;cursor:pointer}li:hover{background-color:#ececec}ul li:first-child{border-top-left-radius:4px;border-bottom-left-radius:4px}ul li:last-child{border-top-right-radius:4px;border-bottom-right-radius:4px}input,textarea{position:absolute;bottom:10px;right:10px;width:370px;max-width:370px;border:1px solid #ccc;box-sizing:border-box;-moz-box-sizing:border-box}textarea{resize:none;top:50px;padding:10px;bottom:110px}textarea:focus{outline:0}label{border:1px solid #ccc}</style>
 </head>
 <body>
 
@@ -23,18 +23,23 @@
 		<li id="pencil"><i class="fa fa-pencil"></i>
 		<li id="plus"><i class="fa fa-plus"></i>
 		<li id="scissors"><i class="fa fa-scissors"></i>
+		<li id="crosshairs"><i class="fa fa-crosshairs"></i>
 		</li>
 	</ul>
 	<ul style="top:10px;right:11px;">
-		<li id="undo"><i class="fa fa-undo"></i></li><li><i class="fa fa-repeat"></i></li><li id="refresh"><i class="fa fa-trash-o"></i></li>
+		<li id="undo"><i class="fa fa-undo"></i>
+		<li><i class="fa fa-repeat"></i>
+		<li id="refresh"><i class="fa fa-trash-o"></i></li>
 	</ul>
 
 	<!-- <ol style="bottom:89px;left:10px;">
 		<li><i class="fa fa-file fa-rotate-180"></i></li><li><i class="fa fa-trash-o"></i></li>
 	</ol> -->
-	
+
 	<ul style="bottom:40px;right:11px">
-		<li id="copy"><i class="fa fa-copy"></i></li><li id="code"><i class="fa fa-code"></i></li>
+		<li id="copy"><i class="fa fa-copy"></i>
+		<li id="clipboard"><i class="fa fa-clipboard"></i>
+		<li id="code"><i class="fa fa-code"></i></li>
 	</ul>
 </div>
 
@@ -69,6 +74,7 @@ var Tools = {
 	LINE: 1,
 	ADD: 2,
 	CUT: 3,
+	ORIGIN: 4,
 }
 var Styles = {
 	ARRAY: 0,
@@ -84,7 +90,7 @@ var selectedHandleIndex = 0;
 
 // Functions
 function windowResize() {
-	canvas.width = window.innerWidth - 309;
+	canvas.width = window.innerWidth - 409;
 	canvas.height = window.innerHeight - 12;
 	div.setAttribute("style", "height:" + canvas.height + "px");
 	grid.set(parseInt(form.zoom.value));
@@ -131,6 +137,9 @@ function drawMode() {
 			break;
 		case Tools.CUT:
 			modeText = "Cut";
+			break;
+		case Tools.ORIGIN:
+			modeText = "Move Origin";
 			break;
 	}
 	ctx.save();
@@ -471,6 +480,15 @@ window.onmousedown = function(evt) {
 			--shape.last;
 			redraw = true;
 			break;
+
+		case Tools.ORIGIN:
+			// Move the origin to the click location
+			for (var i=0, len = shape.points.length; i<len; i++){
+				shape.points[i].x -= click.x;
+				shape.points[i].y -= click.y;
+			}
+			redraw = true;
+			break;
 	}
 
 	if(redraw){
@@ -530,6 +548,9 @@ document.getElementById("plus").onclick = function() {
 }
 document.getElementById("scissors").onclick = function() {
 	currentTool = Tools.CUT;
+}
+document.getElementById("crosshairs").onclick = function() {
+	currentTool = Tools.ORIGIN;
 }
 document.getElementById("code").onclick = function() {
 	currentStyle = (currentStyle + 1) % 4;
