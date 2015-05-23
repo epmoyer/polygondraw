@@ -19,7 +19,11 @@
 		<input type="range" name="zoom" min="15" max="40">
 	</form>
 	<ul style="top:10px;left:10px">
-		<li id="arrows"><i class="fa fa-arrows"></i></li><li id="pencil"><i class="fa fa-pencil"></i>
+		<li id="arrows"><i class="fa fa-arrows"></i>
+		<li id="pencil"><i class="fa fa-pencil"></i>
+		<li id="plus"><i class="fa fa-plus"></i>
+		<li id="scissors"><i class="fa fa-scissors"></i>
+		</li>
 	</ul>
 	<ul style="top:10px;right:11px;">
 		<li id="undo"><i class="fa fa-undo"></i></li><li><i class="fa fa-repeat"></i></li><li id="refresh"><i class="fa fa-refresh"></i></li>
@@ -60,7 +64,9 @@ var ctx = canvas.getContext("2d");
 // Global vars
 var Tools = {
 	MOVE: 0,
-	LINE: 1
+	LINE: 1,
+	ADD: 2,
+	CUT: 3,
 }
 var Styles = {
 	ARRAY: 0,
@@ -83,11 +89,51 @@ function windowResize() {
 	shape.draw(grid);
 }
 
+//---------------------------------
+// Distance to line segment.
+// Adapted from http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+function sqr(x) { return x * x }
+function pointDistanceSquared(v, w) { return sqr(v.x - w.x) + sqr(v.y - w.y) }
+function pointDistance(v, w) { return Math.sqrt(sqr(v.x - w.x) + sqr(v.y - w.y)) }
+function distanceToSegmentSquared(p, v, w) {
+  var l2 = pointDistanceSquared(v, w);
+  if (l2 == 0) return pointDistanceSquared(p, v);
+  var t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+  if (t < 0) return pointDistanceSquared(p, v);
+  if (t > 1) return pointDistanceSquared(p, w);
+  return pointDistanceSquared(p, { x: v.x + t * (w.x - v.x),
+                                   y: v.y + t * (w.y - v.y) });
+}
+function distanceToSegment(p, v, w) { return Math.sqrt(distanceToSegmentSquared(p, v, w)); }
+//---------------------------------
+
 function drawCoords(x, y) {
 	var c = grid.translate(x, y);
 	ctx.save();
 	ctx.fillStyle = "#000";
 	ctx.fillText("("+c.x+", "+c.y+")", 10, 15);
+	ctx.restore();
+}
+
+function drawMode() {
+	var modeText = ""
+	switch(currentTool){
+		case Tools.MOVE:
+			modeText = "Move";
+			break;
+		case Tools.LINE:
+			modeText = "Line";
+			break;
+		case Tools.ADD:
+			modeText = "Add";
+			break;
+		case Tools.CUT:
+			modeText = "Cut";
+			break;
+	}
+	ctx.save();
+	ctx.fillStyle = "#000";
+	ctx.fillText(modeText, 10, 30);
 	ctx.restore();
 }
 
@@ -145,6 +191,25 @@ function drawPoints() {
 	text.value = s.replace(/,([^,]*)$/, '') + nb + "]";
 }
 
+function closestPoint(searchPoint) {
+	// Returns null if there are 0 points in the shape
+
+	var len = shape.points.length;
+	var shortestDistance = 10000000000;
+	var matchIndex = null;
+
+	// Find the nearest line segment to the click
+	for (var i=0; i<len-1; i++){
+		var distance = pointDistance(searchPoint, shape.points[i]);
+		if(distance<shortestDistance){
+			shortestDistance = distance;
+			matchIndex = i;
+		}
+	}
+	return matchIndex;
+}
+
+
 // DataObjs
 var Shape = function() {
 	this.reset();
@@ -174,20 +239,22 @@ Shape.prototype = {
 	},
 
 	draw: function(grid_) {
-		if (this.last < 1) {
-			return;
-		}
+
 		ctx.save();
-		ctx.beginPath();
-		for (var i = 0; i <= this.last; i++) {
-			var p = grid_.toPoint(this.points[i]);
-			if (i === 0) {
-				ctx.moveTo(p.x, p.y);
-				continue;
+
+		// Draw lines
+		if(this.last >= 1){
+			ctx.beginPath();
+			for (var i = 0; i <= this.last; i++) {
+				var p = grid_.toPoint(this.points[i]);
+				if (i === 0) {
+					ctx.moveTo(p.x, p.y);
+					continue;
+				}
+				ctx.lineTo(p.x, p.y);
 			}
-			ctx.lineTo(p.x, p.y);
+			ctx.stroke();
 		}
-		ctx.stroke();
 
 		// Draw vertex handles
 		for (var i = 0; i <= this.last; i++) {
@@ -331,37 +398,58 @@ window.onmousedown = function(evt) {
 	var click = grid.translate(x, y);
 	var redraw = false
 
-	if (currentTool === Tools.LINE) {
-		shape.addPoint(click);
-		if (shape.last > 0 &&
-			click.x === shape.points[0].x &&
-			click.y === shape.points[0].y
-		) {
-			currentTool = Tools.MOVE;
-		}
-		redraw = true;
-	}
-	else if (currentTool == Tools.MOVE) {
-		if (handleIsSelected){
-			handleIsSelected = false;
-		}
-		else{
-			var shortestDistance = 10000000000;
-			var index = 0;
-			for (var i = 0, len=shape.points.length; i < len; i++){
-				var distance = Math.sqrt(
-					Math.pow(shape.points[i].x - click.x, 2) +
-					Math.pow(shape.points[i].y - click.y, 2)
-					);
-				if (distance <= shortestDistance){
-					index = i;
-					shortestDistance = distance;
+	switch(currentTool){
+		case Tools.LINE:
+			shape.addPoint(click);
+			if (shape.last > 0 &&
+				click.x === shape.points[0].x &&
+				click.y === shape.points[0].y
+			) {
+				currentTool = Tools.MOVE;
+			}
+			redraw = true;
+			break;
+
+		case Tools.MOVE:
+			if (handleIsSelected){
+				handleIsSelected = false;
+			}
+			else{
+				var index = closestPoint(click);
+				if(index != null){
+					handleIsSelected = true;
+					selectedHandleIndex = index;
 				}
 			}
-			handleIsSelected = true;
-			selectedHandleIndex = index;
-		}
-		redraw = true;
+			redraw = true;
+			break;
+
+		case Tools.ADD:
+			var len = shape.points.length;
+			var shortestDistance = 10000000000;
+			var matchIndex = 0;
+			if(len >= 2){
+				// Find the nearest line segment to the click
+				for (var i=0; i<len-1; i++){
+					var distance = distanceToSegment(click, shape.points[i], shape.points[i+1]);
+					if(distance<shortestDistance){
+						shortestDistance = distance;
+						matchIndex = i;
+					}
+				}
+				// Add the new point
+				shape.points.splice(matchIndex+1,0,click);
+				++shape.last;
+				redraw = true;
+			}
+			break;
+
+		case Tools.CUT:
+			var index = closestPoint(click);
+			shape.points.splice(index, 1);
+			--shape.last;
+			redraw = true;
+			break;
 	}
 
 	if(redraw){
@@ -369,6 +457,7 @@ window.onmousedown = function(evt) {
 		shape.draw(grid);
 		drawPoints();
 		drawCoords(x, y);
+		drawMode();
 	}
 }
 
@@ -405,6 +494,7 @@ window.onmousemove = function(evt) {
 	}
 
 	drawCoords(x, y);
+	drawMode();
 }
 
 // Button
@@ -413,6 +503,12 @@ document.getElementById("pencil").onclick = function() {
 }
 document.getElementById("arrows").onclick = function() {
 	currentTool = Tools.MOVE;
+}
+document.getElementById("plus").onclick = function() {
+	currentTool = Tools.ADD;
+}
+document.getElementById("scissors").onclick = function() {
+	currentTool = Tools.CUT;
 }
 document.getElementById("code").onclick = function() {
 	currentStyle = (currentStyle + 1) % 4;
