@@ -556,9 +556,14 @@ document.getElementById("code").onclick = function() {
 	currentStyle = (currentStyle + 1) % 4;
 	drawPoints();
 }
-document.getElementById("copy").onclick = function() {
+document.getElementById("clipboard").onclick = function() {
 	text.focus();
 	text.select();
+}
+document.getElementById("copy").onclick = function() {
+	var url = window.location.href.split("?")[0] + "?" + text.value;
+	console.log(url);
+	window.open(url);
 }
 document.getElementById("refresh").onclick = function() {
 	currentTool = Tools.LINE;
