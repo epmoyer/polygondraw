@@ -69,9 +69,10 @@ var Styles = {
 	ONE_NORMALIZED: 3
 }
 var shape, grid, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY;
-var HANDLE_RADIUS = 7;
 
-
+var HANDLE_RADIUS = 4;
+var handleIsSelected = false;
+var selectedHandleIndex = 0;
 
 // Functions
 function windowResize() {
@@ -189,10 +190,20 @@ Shape.prototype = {
 		ctx.stroke();
 
 		// Draw vertex handles
-		ctx.fillStyle = 'green';
-        
 		for (var i = 0; i <= this.last; i++) {
+			var color;
+			if (handleIsSelected && i===selectedHandleIndex){
+				color = 'red';
+			}
+			else if (i == this.last){
+				color = 'blue';
+			}
+			else {
+				color = 'green';
+			}
 			var p = grid_.toPoint(this.points[i]);
+			ctx.fillStyle = color;
+			ctx.strokeStyle = color;
 			ctx.beginPath();
 			ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, 2 * Math.PI, false);
 			ctx.fill();
@@ -317,17 +328,43 @@ window.onmousedown = function(evt) {
 		return;
 	}
 
-	if (currentTool === Tools.LINE) {
-		var c = grid.translate(x, y);
+	var click = grid.translate(x, y);
+	var redraw = false
 
-		shape.addPoint(c);
+	if (currentTool === Tools.LINE) {
+		shape.addPoint(click);
 		if (shape.last > 0 &&
-			c.x === shape.points[0].x &&
-			c.y === shape.points[0].y
+			click.x === shape.points[0].x &&
+			click.y === shape.points[0].y
 		) {
 			currentTool = Tools.MOVE;
 		}
+		redraw = true;
+	}
+	else if (currentTool == Tools.MOVE) {
+		if (handleIsSelected){
+			handleIsSelected = false;
+		}
+		else{
+			var shortestDistance = 10000000000;
+			var index = 0;
+			for (var i = 0, len=shape.points.length; i < len; i++){
+				var distance = Math.sqrt(
+					Math.pow(shape.points[i].x - click.x, 2) +
+					Math.pow(shape.points[i].y - click.y, 2)
+					);
+				if (distance <= shortestDistance){
+					index = i;
+					shortestDistance = distance;
+				}
+			}
+			handleIsSelected = true;
+			selectedHandleIndex = index;
+		}
+		redraw = true;
+	}
 
+	if(redraw){
 		grid.draw();
 		shape.draw(grid);
 		drawPoints();
@@ -355,6 +392,16 @@ window.onmousemove = function(evt) {
 		ctx.moveTo(c.x, c.y);
 		ctx.lineTo(x, y);
 		ctx.stroke();
+	}
+	else if (currentTool === Tools.MOVE && handleIsSelected) {
+		var mousePos = grid.translate(x, y);
+
+		shape.points[selectedHandleIndex].x = mousePos.x;
+		shape.points[selectedHandleIndex].y = mousePos.y;
+
+		grid.draw();
+		shape.draw(grid);
+		drawPoints();
 	}
 
 	drawCoords(x, y);
