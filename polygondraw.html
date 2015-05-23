@@ -26,11 +26,13 @@
 		</li>
 	</ul>
 	<ul style="top:10px;right:11px;">
-		<li id="undo"><i class="fa fa-undo"></i></li><li><i class="fa fa-repeat"></i></li><li id="refresh"><i class="fa fa-refresh"></i></li>
+		<li id="undo"><i class="fa fa-undo"></i></li><li><i class="fa fa-repeat"></i></li><li id="refresh"><i class="fa fa-trash-o"></i></li>
 	</ul>
-	<ol style="bottom:89px;left:10px;">
+
+	<!-- <ol style="bottom:89px;left:10px;">
 		<li><i class="fa fa-file fa-rotate-180"></i></li><li><i class="fa fa-trash-o"></i></li>
-	</ol>
+	</ol> -->
+	
 	<ul style="bottom:40px;right:11px">
 		<li id="copy"><i class="fa fa-copy"></i></li><li id="code"><i class="fa fa-code"></i></li>
 	</ul>
@@ -211,29 +213,31 @@ function closestPoint(searchPoint) {
 
 
 // DataObjs
-var Shape = function() {
-	this.reset();
+var Shape = function(parseUrl) {
+	this.reset(parseUrl);
 };
 Shape.prototype = {
-	reset: function() {
+	reset: function(parseUrl) {
 		this.points = [];
 		this.last = -1;
 
-		// Can supply initial point data in URL following "?".
-		// For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
-	    var pointsString = window.location.search.substring(1);
-	    if (pointsString != ""){
-	    	var pointArray = JSON.parse(pointsString);
-	    	if (pointArray.length % 2 === 0){
-	    		for(var i=0,len=pointArray.length; i<len; i+=2){
-	    			this.points.push({x:pointArray[i],y:pointArray[i+1]});
-	    		}
-	    		this.last = this.points.length - 1;
-	    		// Start in MOVE mode if starting with an existing dataset
-	    		currentTool = Tools.MOVE;
-	    	}
-	    	
-	    }
+		if(parseUrl){
+			// Can supply initial point data in URL following "?".
+			// For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
+			var pointsString = window.location.search.substring(1);
+			if (pointsString != ""){
+				var pointArray = JSON.parse(pointsString);
+				if (pointArray.length % 2 === 0){
+					for(var i=0,len=pointArray.length; i<len; i+=2){
+						this.points.push({x:pointArray[i],y:pointArray[i+1]});
+					}
+					this.last = this.points.length - 1;
+					// Start in MOVE mode if starting with an existing dataset
+					currentTool = Tools.MOVE;
+				}
+				
+			}
+		}
 	},
 
 	addPoint: function(p) {
@@ -388,10 +392,11 @@ Grid.prototype = {
 
 // Setup
 
-shape = new Shape();
+shape = new Shape(true);
 grid = new Grid();
 
 windowResize();
+drawPoints();
 
 window.onresize = windowResize
 
@@ -536,7 +541,7 @@ document.getElementById("copy").onclick = function() {
 }
 document.getElementById("refresh").onclick = function() {
 	currentTool = Tools.LINE;
-	shape = new Shape();
+	shape = new Shape(false);
 	grid.draw();
 	shape.draw(grid);
 	drawPoints();
