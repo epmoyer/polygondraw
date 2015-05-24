@@ -82,7 +82,7 @@ var Styles = {
 	NORMALIZED: 2,
 	ONE_NORMALIZED: 3
 }
-var shape, grid, history, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY;
+var shape, grid, history, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY, mousePos={x:0,y:0};
 
 var HANDLE_RADIUS = 2;
 var handleIsSelected = false;
@@ -94,7 +94,7 @@ function windowResize() {
 	canvas.height = window.innerHeight - 12;
 	div.setAttribute("style", "height:" + canvas.height + "px");
 	grid.set(parseInt(form.zoom.value));
-	shape.draw(grid);
+	redraw();
 }
 
 //---------------------------------
@@ -114,39 +114,6 @@ function distanceToSegmentSquared(p, v, w) {
 }
 function distanceToSegment(p, v, w) { return Math.sqrt(distanceToSegmentSquared(p, v, w)); }
 //---------------------------------
-
-function drawCoords(x, y) {
-	var c = grid.translate(x, y);
-	ctx.save();
-	ctx.fillStyle = "#000";
-	ctx.fillText("("+c.x+", "+c.y+")", 10, 15);
-	ctx.restore();
-}
-
-function drawMode() {
-	var modeText = ""
-	switch(currentTool){
-		case Tools.MOVE:
-			modeText = "Move";
-			break;
-		case Tools.LINE:
-			modeText = "Line";
-			break;
-		case Tools.ADD:
-			modeText = "Add";
-			break;
-		case Tools.CUT:
-			modeText = "Cut";
-			break;
-		case Tools.ORIGIN:
-			modeText = "Move Origin";
-			break;
-	}
-	ctx.save();
-	ctx.fillStyle = "#000";
-	ctx.fillText(modeText, 10, 30);
-	ctx.restore();
-}
 
 function drawPoints() {
 	if (shape.last < 0) {
@@ -223,17 +190,51 @@ function closestPoint(searchPoint) {
 function undo(){
 	shape.points = history.undo();
 	shape.last = shape.points.length -1;
-	grid.draw();
-	shape.draw(grid);
-	drawPoints();
+	redraw();
 }
 
 function redo(){
 	shape.points = history.redo();
 	shape.last = shape.points.length -1;
+	redraw();
+}
+
+function switchTool(newTool){
+	currentTool = newTool;
+	redraw();
+}
+
+function redraw(){
 	grid.draw();
 	shape.draw(grid);
 	drawPoints();
+	
+	// Show mouse coordinates
+	ctx.save();
+	ctx.fillStyle = "#000";
+	ctx.fillText("("+mousePos.x+", "+mousePos.y+")", 10, 15);
+
+	// Show current tool
+	var modeText = ""
+	switch(currentTool){
+		case Tools.MOVE:
+			modeText = "Move";
+			break;
+		case Tools.LINE:
+			modeText = "Line";
+			break;
+		case Tools.ADD:
+			modeText = "Add";
+			break;
+		case Tools.CUT:
+			modeText = "Cut";
+			break;
+		case Tools.ORIGIN:
+			modeText = "Change Origin";
+			break;
+	}
+	ctx.fillText(modeText, 10, 30);
+	ctx.restore();
 }
 
 // DataObjs
@@ -319,10 +320,7 @@ Shape.prototype = {
 			ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, 2 * Math.PI, false);
 			ctx.fill();
 			ctx.stroke();
-		}
-		
-
-		
+		}		
 		ctx.restore();
 	}
 };
@@ -475,14 +473,14 @@ grid = new Grid();
 history = new History();
 
 windowResize();
-drawPoints();
+redraw();
 
 window.onresize = windowResize
 
 form.zoom.onchange = function() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	grid.set(parseInt(this.value));
-	shape.draw(grid);
+	redraw();
 }
 
 window.onmousedown = function(evt) {
@@ -496,7 +494,6 @@ window.onmousedown = function(evt) {
 	}
 
 	var click = grid.translate(x, y);
-	var redraw = false
 
 	switch(currentTool){
 		case Tools.LINE:
@@ -507,7 +504,6 @@ window.onmousedown = function(evt) {
 			) {
 				currentTool = Tools.MOVE;
 			}
-			redraw = true;
 			history.commit(shape.points);
 			break;
 
@@ -523,7 +519,6 @@ window.onmousedown = function(evt) {
 					selectedHandleIndex = index;
 				}
 			}
-			redraw = true;
 			break;
 
 		case Tools.ADD:
@@ -543,7 +538,6 @@ window.onmousedown = function(evt) {
 				shape.points.splice(matchIndex+1,0,click);
 				++shape.last;
 				history.commit(shape.points);
-				redraw = true;
 			}
 			break;
 
@@ -551,7 +545,6 @@ window.onmousedown = function(evt) {
 			var index = closestPoint(click);
 			shape.points.splice(index, 1);
 			--shape.last;
-			redraw = true;
 			history.commit(shape.points);
 			break;
 
@@ -561,18 +554,11 @@ window.onmousedown = function(evt) {
 				shape.points[i].x -= click.x;
 				shape.points[i].y -= click.y;
 			}
-			redraw = true;
 			history.commit(shape.points);
 			break;
 	}
 
-	if(redraw){
-		grid.draw();
-		shape.draw(grid);
-		drawPoints();
-		drawCoords(x, y);
-		drawMode();
-	}
+	redraw();
 }
 
 window.onmousemove = function(evt) {
@@ -585,8 +571,8 @@ window.onmousemove = function(evt) {
 		return;
 	}
 
-	grid.draw();
-	shape.draw(grid);
+	mousePos = grid.translate(x, y);
+	redraw();
 
 	if (currentTool === Tools.LINE && shape.last >= 0) {
 		var c = grid.toPoint(shape.getLast());
@@ -597,35 +583,26 @@ window.onmousemove = function(evt) {
 		ctx.stroke();
 	}
 	else if (currentTool === Tools.MOVE && handleIsSelected) {
-		var mousePos = grid.translate(x, y);
-
 		shape.points[selectedHandleIndex].x = mousePos.x;
 		shape.points[selectedHandleIndex].y = mousePos.y;
-
-		grid.draw();
-		shape.draw(grid);
-		drawPoints();
 	}
-
-	drawCoords(x, y);
-	drawMode();
 }
 
 // Button
 document.getElementById("pencil").onclick = function() {
-	currentTool = Tools.LINE;
+	switchTool(Tools.LINE);
 }
 document.getElementById("arrows").onclick = function() {
-	currentTool = Tools.MOVE;
+	switchTool(Tools.MOVE);
 }
 document.getElementById("plus").onclick = function() {
-	currentTool = Tools.ADD;
+	switchTool(Tools.ADD);
 }
 document.getElementById("scissors").onclick = function() {
-	currentTool = Tools.CUT;
+	switchTool(Tools.CUT);
 }
 document.getElementById("crosshairs").onclick = function() {
-	currentTool = Tools.ORIGIN;
+	switchTool(Tools.ORIGIN);
 }
 document.getElementById("code").onclick = function() {
 	currentStyle = (currentStyle + 1) % 4;
@@ -637,16 +614,15 @@ document.getElementById("clipboard").onclick = function() {
 }
 document.getElementById("copy").onclick = function() {
 	var url = window.location.href.split("?")[0] + "?" + text.value;
-	console.log(url);
 	window.open(url);
 }
 document.getElementById("refresh").onclick = function() {
-	currentTool = Tools.LINE;
-	shape = new Shape(false);
-	history.clear();
-	grid.draw();
-	shape.draw(grid);
-	drawPoints();
+	if(confirm("Clear all polygon points and start over? This operation cannot be undone.")){
+		switchTool(Tools.LINE);
+		shape = new Shape(false);
+		history.clear();
+		redraw();
+	}
 }
 document.getElementById("undo").onclick = function() {
 	undo();
@@ -657,22 +633,22 @@ document.getElementById("redo").onclick = function() {
 
 // Keyboard handler
 document.addEventListener("keydown", function(evt) {
-	console.log("Key Code:" + evt.keyCode); 
 	switch(evt.keyCode){
 		case 77: // "M"
-			currentTool = Tools.MOVE;
+		case 27: // <escape>
+			switchTool(Tools.MOVE);
 			break;
 		case 76: // "L"
-			currentTool = Tools.LINE;
+			switchTool(Tools.LINE);
 			break;
 		case 65: // "A"
-			currentTool = Tools.ADD;
+			switchTool(Tools.ADD);
 			break;
 		case 67: // "C"
-			currentTool = Tools.CUT;
+			switchTool(Tools.CUT);
 			break;
 		case 79: // "O"
-			currentTool = Tools.ORIGIN;
+			switchTool(Tools.ORIGIN);
 			break;
 		case 85: // "U"
 			undo();
@@ -682,7 +658,6 @@ document.addEventListener("keydown", function(evt) {
 			break;
 	}
 });
-
 
 }).call();
 </script>
