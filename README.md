@@ -18,6 +18,11 @@ Copy | **Copy**: Open a new web page with the current verticies specified in the
 Clipboard | **Clipboard**: Select the array syntax (for copying/pasting into your code).
 Code | **Code Mode**: Cycle through the various array syntax options (ARRAY, ONE_ARRAY, NORMALISED, ONE_NORMALIZED).
 
+Note: You can load any pre-existing vector from your code into polygondraw by specifying it in the URL; just add a "?" followed by the array data.  For example:  
+```
+http://www.website.com/polygondraw.html?[1,1,4,4]
+```
+
 You can Find Max's work on his [youtube channel](https://www.youtube.com/channel/UCZXyfVkPTnv-Z0xY9hA9Pyw), on his [github page](https://github.com/maxwihlborg), and at [http://www.maxwihlborg.com](http://www.maxwihlborg.com)
 
 This content is released under the ([http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT)) MIT License.
