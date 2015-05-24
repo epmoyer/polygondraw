@@ -28,7 +28,7 @@
 	</ul>
 	<ul style="top:10px;right:11px;">
 		<li id="undo"><i class="fa fa-undo"></i>
-		<li><i class="fa fa-repeat"></i>
+		<li id="redo"><i class="fa fa-repeat"></i>
 		<li id="refresh"><i class="fa fa-trash-o"></i></li>
 	</ul>
 
@@ -82,7 +82,7 @@ var Styles = {
 	NORMALIZED: 2,
 	ONE_NORMALIZED: 3
 }
-var shape, grid, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY;
+var shape, grid, history, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY;
 
 var HANDLE_RADIUS = 2;
 var handleIsSelected = false;
@@ -220,6 +220,21 @@ function closestPoint(searchPoint) {
 	return matchIndex;
 }
 
+function undo(){
+	shape.points = history.undo();
+	shape.last = shape.points.length -1;
+	grid.draw();
+	shape.draw(grid);
+	drawPoints();
+}
+
+function redo(){
+	shape.points = history.redo();
+	shape.last = shape.points.length -1;
+	grid.draw();
+	shape.draw(grid);
+	drawPoints();
+}
 
 // DataObjs
 var Shape = function(parseUrl) {
@@ -312,6 +327,60 @@ Shape.prototype = {
 	}
 };
 
+var History = function(){
+	this.clear();
+};
+History.prototype = {
+	clear: function(){
+		this.pointsHistory = [];
+		this.tail = -1;
+	},
+
+	commit: function(points){
+		// Remove any history after the current tail
+		var splice_index = this.tail + 1;
+		if(splice_index <= this.pointsHistory.length - 1){
+			this.pointsHistory.splice(splice_index, this.pointsHistory.length - splice_index);
+		}
+		// Add the new point set to the history
+		var clone = this.clone(points);
+		this.pointsHistory.push(this.clone(points));
+		this.tail = this.pointsHistory.length - 1;
+	},
+
+	undo: function(){
+	    --this.tail;
+		if(this.tail <= -1){
+			this.tail = -1;
+			return [];
+		}
+		else {
+			return this.clone(this.pointsHistory[this.tail]);
+		}
+	},
+
+	redo: function(){
+		++this.tail;
+		if(this.tail>this.pointsHistory.length-1){
+			this.tail = this.pointsHistory.length-1;
+			console.log("Nothing to redo.")
+		}
+		if(this.tail === -1){
+			return [];
+		}
+		else {
+			return this.clone(this.pointsHistory[this.tail]);
+		}
+	},
+
+	clone: function(points){
+		var pointsClone = [];
+		for(var i=0, len=points.length; i<len; i++){
+			pointsClone.push({x:points[i].x, y:points[i].y});
+		}
+		return pointsClone;
+	},
+};
 
 var Grid = function() {
 	this.canvas = document.createElement("canvas");
@@ -403,6 +472,7 @@ Grid.prototype = {
 
 shape = new Shape(true);
 grid = new Grid();
+history = new History();
 
 windowResize();
 drawPoints();
@@ -438,11 +508,13 @@ window.onmousedown = function(evt) {
 				currentTool = Tools.MOVE;
 			}
 			redraw = true;
+			history.commit(shape.points);
 			break;
 
 		case Tools.MOVE:
 			if (handleIsSelected){
 				handleIsSelected = false;
+				history.commit(shape.points);
 			}
 			else{
 				var index = closestPoint(click);
@@ -470,6 +542,7 @@ window.onmousedown = function(evt) {
 				// Add the new point
 				shape.points.splice(matchIndex+1,0,click);
 				++shape.last;
+				history.commit(shape.points);
 				redraw = true;
 			}
 			break;
@@ -479,6 +552,7 @@ window.onmousedown = function(evt) {
 			shape.points.splice(index, 1);
 			--shape.last;
 			redraw = true;
+			history.commit(shape.points);
 			break;
 
 		case Tools.ORIGIN:
@@ -488,6 +562,7 @@ window.onmousedown = function(evt) {
 				shape.points[i].y -= click.y;
 			}
 			redraw = true;
+			history.commit(shape.points);
 			break;
 	}
 
@@ -568,11 +643,16 @@ document.getElementById("copy").onclick = function() {
 document.getElementById("refresh").onclick = function() {
 	currentTool = Tools.LINE;
 	shape = new Shape(false);
+	history.clear();
 	grid.draw();
 	shape.draw(grid);
 	drawPoints();
 }
 document.getElementById("undo").onclick = function() {
+	undo();
+}
+document.getElementById("redo").onclick = function() {
+	redo();
 }
 
 // Keyboard handler
@@ -593,6 +673,12 @@ document.addEventListener("keydown", function(evt) {
 			break;
 		case 79: // "O"
 			currentTool = Tools.ORIGIN;
+			break;
+		case 85: // "U"
+			undo();
+			break;
+		case 82: // "R"
+			redo();
 			break;
 	}
 });
