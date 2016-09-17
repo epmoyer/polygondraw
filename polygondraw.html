@@ -1,57 +1,57 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>Test</title>
+    <meta charset="UTF-8">
+    <title>Test</title>
 
-	<meta name="viewport" content="user-scalable=no" />
-	<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-	<link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="user-scalable=no" />
+    <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- GUI -->
 <canvas></canvas>
 <div>
-	<form>
-		<textarea name="coords" readonly></textarea>
-		<input type="range" name="zoom" min="15" max="40">
-	</form>
-	<ul style="top:10px;left:10px">
-		<li id="arrows"><i class="fa fa-arrows"></i>
-		<li id="pencil"><i class="fa fa-pencil"></i>
-		<li id="plus"><i class="fa fa-plus"></i>
-		<li id="scissors"><i class="fa fa-scissors"></i>
-		<li id="crosshairs"><i class="fa fa-crosshairs"></i>
-		<li id="eye-slash"><i class="fa fa-eye-slash"></i>
-		</li>
-	</ul>
+    <form>
+        <textarea name="coords" readonly></textarea>
+        <input type="range" name="zoom" min="15" max="40">
+    </form>
+    <ul style="top:10px;left:10px">
+        <li id="arrows"><i class="fa fa-arrows"></i>
+        <li id="pencil"><i class="fa fa-pencil"></i>
+        <li id="plus"><i class="fa fa-plus"></i>
+        <li id="scissors"><i class="fa fa-scissors"></i>
+        <li id="crosshairs"><i class="fa fa-crosshairs"></i>
+        <li id="eye-slash"><i class="fa fa-eye-slash"></i>
+        </li>
+    </ul>
 
-	<ul style="top:45px;left:10px;">
-		<li id="undo"><i class="fa fa-undo"></i>
-		<li id="redo"><i class="fa fa-repeat"></i>
-		<li id="refresh"><i class="fa fa-trash-o"></i></li>
-	</ul>
+    <ul style="top:45px;left:10px;">
+        <li id="undo"><i class="fa fa-undo"></i>
+        <li id="redo"><i class="fa fa-repeat"></i>
+        <li id="refresh"><i class="fa fa-trash-o"></i></li>
+    </ul>
 
-	<!-- <ol style="bottom:89px;left:10px;">
-		<li><i class="fa fa-file fa-rotate-180"></i></li><li><i class="fa fa-trash-o"></i></li>
-	</ol> -->
+    <!-- <ol style="bottom:89px;left:10px;">
+        <li><i class="fa fa-file fa-rotate-180"></i></li><li><i class="fa fa-trash-o"></i></li>
+    </ol> -->
 
-	<ul style="bottom:40px;right:11px">
-		<li id="copy"><i class="fa fa-copy"></i>
-		<li id="clipboard"><i class="fa fa-clipboard"></i>
-		<li id="code"><i class="fa fa-code"></i></li>
-	</ul>
+    <ul style="bottom:40px;right:11px">
+        <li id="copy"><i class="fa fa-copy"></i>
+        <li id="clipboard"><i class="fa fa-clipboard"></i>
+        <li id="code"><i class="fa fa-code"></i></li>
+    </ul>
 </div>
 
 <style>
 img {
-	display: block;
-	position: absolute;
-	opacity: 1;
-	top: 25px;
-	left: 10px;
-	width: auto;
+    display: block;
+    position: absolute;
+    opacity: 1;
+    top: 25px;
+    left: 10px;
+    width: auto;
 }
 </style>
 
@@ -71,32 +71,35 @@ var ctx = canvas.getContext("2d");
 
 // Global vars
 var Tools = {
-	MOVE: 0,
-	LINE: 1,
-	ADD: 2,
-	CUT: 3,
-	ORIGIN: 4,
-	VISIBILITY: 5,
+    MOVE: 0,
+    LINE: 1,
+    ADD: 2,
+    CUT: 3,
+    ORIGIN: 4,
+    VISIBILITY: 5,
 }
 var Styles = {
-	ARRAY: 0,
-	ONE_ARRAY: 1,
-	NORMALIZED: 2,
-	ONE_NORMALIZED: 3
+    ARRAY: 0,
+    ONE_ARRAY: 1,
+    NORMALIZED: 2,
+    ONE_NORMALIZED: 3
 }
 var shape, grid, history, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY, mousePos={x:0,y:0};
 
-var HANDLE_RADIUS = 2;
+var HANDLE_RADIUS = 4;
 var handleIsSelected = false;
 var selectedHandleIndex = 0;
 
+var PEN_COMMAND = 9000;
+var PEN_UP = 8000;
+
 // Functions
 function windowResize() {
-	canvas.width = window.innerWidth - 359;
-	canvas.height = window.innerHeight - 12;
-	div.setAttribute("style", "height:" + canvas.height + "px");
-	grid.set(parseInt(form.zoom.value));
-	redraw();
+    canvas.width = window.innerWidth - 359;
+    canvas.height = window.innerHeight - 12;
+    div.setAttribute("style", "height:" + canvas.height + "px");
+    grid.set(parseInt(form.zoom.value));
+    redraw();
 }
 
 //---------------------------------
@@ -118,374 +121,380 @@ function distanceToSegment(p, v, w) { return Math.sqrt(distanceToSegmentSquared(
 //---------------------------------
 
 function drawPoints() {
-	if (shape.last < 0) {
-		text.value = "";
-		return;
-	}
-	var s = "[";
-	var nb = "\n";
-	switch (currentStyle) {
-	
-		case Styles.ARRAY:
-			s += "\n";
-			for (var i = 0; i <= shape.last; i++) {
-				var p = shape.points[i];
-				s += "\t" + p.x + ", " + p.y + ",\n";
-			}
-			break;
+    if (shape.last < 0) {
+        text.value = "";
+        return;
+    }
+    var s = "[";
+    var nb = "\n";
+    switch (currentStyle) {
+    
+        case Styles.ARRAY:
+            s += "\n";
+            for (var i = 0; i <= shape.last; i++) {
+                var p = shape.points[i];
+                s += "\t" + p.x + ", " + p.y + ",\n";
+            }
+            break;
 
-		case Styles.ONE_ARRAY:
-			for (var i = 0; i <= shape.last; i++) {
-				var p = shape.points[i];
-				s += p.x+","+p.y+",";
-			}
-			nb = "";
-			break;
+        case Styles.ONE_ARRAY:
+            for (var i = 0; i <= shape.last; i++) {
+                var p = shape.points[i];
+                s += p.x+","+p.y+",";
+                if(!p.visible){
+                    s += PEN_COMMAND+","+PEN_UP+",";
+                }
+            }
+            nb = "";
+            break;
 
-		case Styles.NORMALIZED:
-			var l = 0;
-			s += "\n";
-			for (var i = 0; i <= shape.last; i++) {
-				var p = shape.points[i];
-				var l = Math.max(l, Math.sqrt(p.x*p.x + p.y*p.y));
-			}
-			for (var i = 0; i <= shape.last; i++) {
-				var p = shape.points[i];
-				s += "\t" + p.x/l + ",\n\t" + p.y/l + ",\n";
-			}
-			break;
+        case Styles.NORMALIZED:
+            var l = 0;
+            s += "\n";
+            for (var i = 0; i <= shape.last; i++) {
+                var p = shape.points[i];
+                var l = Math.max(l, Math.sqrt(p.x*p.x + p.y*p.y));
+            }
+            for (var i = 0; i <= shape.last; i++) {
+                var p = shape.points[i];
+                s += "\t" + p.x/l + ",\n\t" + p.y/l + ",\n";
+            }
+            break;
 
-		case Styles.ONE_NORMALIZED:
-			var l = 0;
-			for (var i = 0; i <= shape.last; i++) {
-				var p = shape.points[i];
-				var l = Math.max(l, Math.sqrt(p.x*p.x + p.y*p.y));
-			}
-			for (var i = 0; i <= shape.last; i++) {
-				var p = shape.points[i];
-				s += p.x/l+","+p.y/l+",";
-			}
-			nb = "";
-			break;
-	}
-	text.value = s.replace(/,([^,]*)$/, '') + nb + "]";
+        case Styles.ONE_NORMALIZED:
+            var l = 0;
+            for (var i = 0; i <= shape.last; i++) {
+                var p = shape.points[i];
+                var l = Math.max(l, Math.sqrt(p.x*p.x + p.y*p.y));
+            }
+            for (var i = 0; i <= shape.last; i++) {
+                var p = shape.points[i];
+                s += p.x/l+","+p.y/l+",";
+            }
+            nb = "";
+            break;
+    }
+    text.value = s.replace(/,([^,]*)$/, '') + nb + "]";
 }
 
 function closestPoint(searchPoint) {
-	// Returns null if there are 0 points in the shape
+    // Returns null if there are 0 points in the shape
 
-	var len = shape.points.length;
-	var shortestDistance = 10000000000;
-	var matchIndex = null;
+    var len = shape.points.length;
+    var shortestDistance = 10000000000;
+    var matchIndex = null;
 
-	// Find the nearest line segment to the click
-	for (var i=0; i<len; i++){
-		var distance = pointDistance(searchPoint, shape.points[i]);
-		if(distance<shortestDistance){
-			shortestDistance = distance;
-			matchIndex = i;
-		}
-	}
-	return matchIndex;
+    // Find the nearest line segment to the click
+    for (var i=0; i<len; i++){
+        var distance = pointDistance(searchPoint, shape.points[i]);
+        if(distance<shortestDistance){
+            shortestDistance = distance;
+            matchIndex = i;
+        }
+    }
+    return matchIndex;
 }
 
 function undo(){
-	shape.points = history.undo();
-	shape.last = shape.points.length -1;
-	redraw();
+    shape.points = history.undo();
+    shape.last = shape.points.length -1;
+    redraw();
 }
 
 function redo(){
-	shape.points = history.redo();
-	shape.last = shape.points.length -1;
-	redraw();
+    shape.points = history.redo();
+    shape.last = shape.points.length -1;
+    redraw();
 }
 
 function switchTool(newTool){
-	currentTool = newTool;
-	redraw();
+    currentTool = newTool;
+    redraw();
 }
 
 function redraw(){
-	grid.draw();
-	shape.draw(grid);
-	drawPoints();
-	
-	// Show mouse coordinates
-	ctx.save();
-	ctx.fillStyle = "#fff";
-	ctx.font="12px Helvetica";
-	ctx.fillText("("+mousePos.x+", "+mousePos.y+")", 10, 15);
+    grid.draw();
+    shape.draw(grid);
+    drawPoints();
+    
+    // Show mouse coordinates
+    ctx.save();
+    ctx.fillStyle = "#fff";
+    ctx.font="12px Helvetica";
+    ctx.fillText("("+mousePos.x+", "+mousePos.y+")", 10, 15);
 
-	// Show current tool
-	var modeText = "";
-	switch(currentTool){
-		case Tools.MOVE:
-			modeText = "Move";
-			break;
-		case Tools.LINE:
-			modeText = "Line";
-			break;
-		case Tools.ADD:
-			modeText = "Add";
-			break;
-		case Tools.CUT:
-			modeText = "Cut";
-			break;
-		case Tools.ORIGIN:
-			modeText = "Change Origin";
-			break;
-		case Tools.VISIBILITY:
-			modeText = "Toggle Visibility";
-			break;
-	}
-	ctx.fillText(modeText, 10, 30);
-	ctx.restore();
+    // Show current tool
+    var modeText = "";
+    switch(currentTool){
+        case Tools.MOVE:
+            modeText = "Move";
+            break;
+        case Tools.LINE:
+            modeText = "Line";
+            break;
+        case Tools.ADD:
+            modeText = "Add";
+            break;
+        case Tools.CUT:
+            modeText = "Cut";
+            break;
+        case Tools.ORIGIN:
+            modeText = "Change Origin";
+            break;
+        case Tools.VISIBILITY:
+            modeText = "Toggle Visibility";
+            break;
+    }
+    ctx.fillText(modeText, 10, 30);
+    ctx.restore();
 }
 
 // DataObjs
 var Shape = function(parseUrl) {
-	this.reset(parseUrl);
+    this.reset(parseUrl);
 };
 Shape.prototype = {
-	reset: function(parseUrl) {
-		this.points = [];
-		this.last = -1;
+    reset: function(parseUrl) {
+        this.points = [];
+        this.last = -1;
 
-		if(parseUrl){
-			// Can supply initial point data in URL following "?".
-			// For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
-			var pointsString = window.location.search.substring(1);
-			if (pointsString !== ""){
-				var pointArray = JSON.parse(pointsString);
-				if (pointArray.length % 2 === 0){
-					for(var i=0,len=pointArray.length; i<len; i+=2){
-						this.points.push({x:pointArray[i],y:pointArray[i+1],visible:true});
-					}
-					//TODO:Post process visibility
-					this.last = this.points.length - 1;
-					// Start in MOVE mode if starting with an existing dataset
-					currentTool = Tools.MOVE;
-				}
-				
-			}
-		}
-	},
+        if(parseUrl){
+            // Can supply initial point data in URL following "?".
+            // For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
+            var pointsString = window.location.search.substring(1);
+            if (pointsString !== ""){
+                var pointArray = JSON.parse(pointsString);
+                if (pointArray.length % 2 === 0){
+                    for(var i=0,len=pointArray.length; i<len; i+=2){
+                        this.points.push({x:pointArray[i],y:pointArray[i+1],visible:true});
+                    }
+                    //TODO:Post process visibility
+                    this.last = this.points.length - 1;
+                    // Start in MOVE mode if starting with an existing dataset
+                    currentTool = Tools.MOVE;
+                }
+                
+            }
+        }
+    },
 
-	addPoint: function(p) {
-		if (this.last >= 0 &&
-		   (p.x === this.getLast().x &&
-			p.y === this.getLast().y)
-		) {
-			return;
-		}
-		p.visible=true;
-		this.points.push(p);
-		this.last = this.points.length - 1;
-	},
-	
-	getLast: function() {
-		return {
-			x: this.points[this.last].x,
-			y: this.points[this.last].y
-		};
-	},
+    addPoint: function(p) {
+        if (this.last >= 0 &&
+           (p.x === this.getLast().x &&
+            p.y === this.getLast().y)
+        ) {
+            return;
+        }
+        p.visible=true;
+        this.points.push(p);
+        this.last = this.points.length - 1;
+    },
+    
+    getLast: function() {
+        return {
+            x: this.points[this.last].x,
+            y: this.points[this.last].y
+        };
+    },
 
-	draw: function(grid_) {
+    draw: function(grid_) {
 
-		ctx.save();
+        ctx.save();
 
-		// Draw lines
-		if(this.last >= 1){
-			ctx.strokeStyle = 'white';
-			ctx.beginPath();
-			for (var i = 0; i <= this.last; i++) {
-				var p = grid_.toPoint(this.points[i]);
-				if (i === 0) {
-					ctx.moveTo(p.x, p.y);
-					continue;
-				}
-				ctx.lineTo(p.x, p.y);
+        // Draw lines
+        if(this.last >= 1){
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth=2;
+            ctx.beginPath();
+            for (var i = 0; i <= this.last; i++) {
+                var p = grid_.toPoint(this.points[i]);
+                if (i === 0) {
+                    ctx.moveTo(p.x, p.y);
+                    continue;
+                }
+                ctx.lineTo(p.x, p.y);
 
-				if(p.visible){
-					ctx.stroke();
-					ctx.strokeStyle = 'white';
-					ctx.beginPath();
-					ctx.moveTo(p.x, p.y);
-				}
-				else{
-					ctx.stroke();
-					ctx.strokeStyle = 'green';
-					ctx.beginPath();
-					ctx.moveTo(p.x, p.y);
-				}
-			}
-			ctx.stroke();
-		}
+                if(p.visible){
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'white';
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                }
+                else{
+                    ctx.stroke();
+                    ctx.setLineDash([5, 10]);
+                    ctx.strokeStyle = 'gray';
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                }
+            }
+            ctx.stroke();
+        }
 
-		// Draw vertex handles
-		for (var i = 0; i <= this.last; i++) {
-			var color;
-			if (handleIsSelected && i===selectedHandleIndex){
-				color = 'red';
-			}
-			else if (i == this.last){
-				color = 'blue';
-			}
-			else {
-				color = 'green';
-			}
-			var p = grid_.toPoint(this.points[i]);
-			ctx.fillStyle = color;
-			ctx.strokeStyle = color;
-			ctx.beginPath();
-			ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, 2 * Math.PI, false);
-			ctx.fill();
-			ctx.stroke();
-		}		
-		ctx.restore();
-	}
+        // Draw vertex handles
+        for (var i = 0; i <= this.last; i++) {
+            var color;
+            if (handleIsSelected && i===selectedHandleIndex){
+                color = 'red';
+            }
+            else if (i == this.last){
+                color = 'blue';
+            }
+            else {
+                color = 'green';
+            }
+            var p = grid_.toPoint(this.points[i]);
+            ctx.fillStyle = color;
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, 2 * Math.PI, false);
+            ctx.fill();
+            ctx.stroke();
+        }       
+        ctx.restore();
+    }
 };
 
 var History = function(){
-	this.clear();
+    this.clear();
 };
 History.prototype = {
-	clear: function(){
-		this.pointsHistory = [];
-		this.tail = -1;
-	},
+    clear: function(){
+        this.pointsHistory = [];
+        this.tail = -1;
+    },
 
-	commit: function(points){
-		// Remove any history after the current tail
-		var splice_index = this.tail + 1;
-		if(splice_index <= this.pointsHistory.length - 1){
-			this.pointsHistory.splice(splice_index, this.pointsHistory.length - splice_index);
-		}
-		// Add the new point set to the history
-		var clone = this.clone(points);
-		this.pointsHistory.push(this.clone(points));
-		this.tail = this.pointsHistory.length - 1;
-	},
+    commit: function(points){
+        // Remove any history after the current tail
+        var splice_index = this.tail + 1;
+        if(splice_index <= this.pointsHistory.length - 1){
+            this.pointsHistory.splice(splice_index, this.pointsHistory.length - splice_index);
+        }
+        // Add the new point set to the history
+        var clone = this.clone(points);
+        this.pointsHistory.push(this.clone(points));
+        this.tail = this.pointsHistory.length - 1;
+    },
 
-	undo: function(){
-	    --this.tail;
-		if(this.tail <= -1){
-			this.tail = -1;
-			return [];
-		}
-		else {
-			return this.clone(this.pointsHistory[this.tail]);
-		}
-	},
+    undo: function(){
+        --this.tail;
+        if(this.tail <= -1){
+            this.tail = -1;
+            return [];
+        }
+        else {
+            return this.clone(this.pointsHistory[this.tail]);
+        }
+    },
 
-	redo: function(){
-		++this.tail;
-		if(this.tail>this.pointsHistory.length-1){
-			this.tail = this.pointsHistory.length-1;
-			console.log("Nothing to redo.");
-		}
-		if(this.tail === -1){
-			return [];
-		}
-		else {
-			return this.clone(this.pointsHistory[this.tail]);
-		}
-	},
+    redo: function(){
+        ++this.tail;
+        if(this.tail>this.pointsHistory.length-1){
+            this.tail = this.pointsHistory.length-1;
+            console.log("Nothing to redo.");
+        }
+        if(this.tail === -1){
+            return [];
+        }
+        else {
+            return this.clone(this.pointsHistory[this.tail]);
+        }
+    },
 
-	clone: function(points){
-		var pointsClone = [];
-		for(var i=0, len=points.length; i<len; i++){
-			pointsClone.push({x:points[i].x, y:points[i].y, visible:points[i].visible});
-		}
-		return pointsClone;
-	},
+    clone: function(points){
+        var pointsClone = [];
+        for(var i=0, len=points.length; i<len; i++){
+            pointsClone.push({x:points[i].x, y:points[i].y, visible:points[i].visible});
+        }
+        return pointsClone;
+    },
 };
 
 var Grid = function() {
-	this.canvas = document.createElement("canvas");
-	this.ctx = this.canvas.getContext("2d");
+    this.canvas = document.createElement("canvas");
+    this.ctx = this.canvas.getContext("2d");
 };
 Grid.prototype = {
-	set: function(size) {
-		this.size = size;
+    set: function(size) {
+        this.size = size;
 
-		var wt = Math.ceil(canvas.width / size);
-		var ht = Math.ceil(canvas.height / size);
-		this.width = (wt + wt%2) * size + 1;
-		this.height = (ht + ht%2) * size + 1;
+        var wt = Math.ceil(canvas.width / size);
+        var ht = Math.ceil(canvas.height / size);
+        this.width = (wt + wt%2) * size + 1;
+        this.height = (ht + ht%2) * size + 1;
 
-		this.x = Math.round((canvas.width - this.width)/2);
-		this.y = Math.round((canvas.height - this.height)/2);
+        this.x = Math.round((canvas.width - this.width)/2);
+        this.y = Math.round((canvas.height - this.height)/2);
 
-		this.origo = {
-			x: Math.round(this.width/(this.size*2)),
-			y: Math.round(this.height/(this.size*2))
-		};
+        this.origo = {
+            x: Math.round(this.width/(this.size*2)),
+            y: Math.round(this.height/(this.size*2))
+        };
 
-		this.canvas.width = this.width;
-		this.canvas.height = this.height;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
 
-		this.createGrid();
-		this.draw();
-	},
+        this.createGrid();
+        this.draw();
+    },
 
-	createGrid: function() {
-		var x = 0.5,
-			y = 0.5,
-			w = this.width-1,
-			h = this.height-1;
+    createGrid: function() {
+        var x = 0.5,
+            y = 0.5,
+            w = this.width-1,
+            h = this.height-1;
 
-		this.ctx.save();
-		this.ctx.strokeStyle = "#282828";
-		this.ctx.fillStyle = "#000";
-		this.ctx.fillRect(0, 0, this.width, this.height);
+        this.ctx.save();
+        this.ctx.strokeStyle = "#282828";
+        this.ctx.fillStyle = "#000";
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
-		this.ctx.beginPath();
-		this.ctx.rect(x, y, w, h);
-		while (x < w) {
-			x += this.size;
-			this.ctx.moveTo(x, y);
-			this.ctx.lineTo(x, y+h);
-		}
-		x = 0.5;
-		while (y < h) {
-			y += this.size;
-			this.ctx.moveTo(x, y);
-			this.ctx.lineTo(x+w, y);
-		}
-		this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.rect(x, y, w, h);
+        while (x < w) {
+            x += this.size;
+            this.ctx.moveTo(x, y);
+            this.ctx.lineTo(x, y+h);
+        }
+        x = 0.5;
+        while (y < h) {
+            y += this.size;
+            this.ctx.moveTo(x, y);
+            this.ctx.lineTo(x+w, y);
+        }
+        this.ctx.stroke();
 
-		this.ctx.beginPath();
-		this.ctx.fillStyle = "#383838";
-		this.ctx.arc(this.origo.x * this.size + 0.5, this.origo.y * this.size + 0.5, 5, 0, 2*Math.PI);
-		this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.fillStyle = "#383838";
+        this.ctx.arc(this.origo.x * this.size + 0.5, this.origo.y * this.size + 0.5, 5, 0, 2*Math.PI);
+        this.ctx.fill();
 
-		this.ctx.restore();
-	},
+        this.ctx.restore();
+    },
 
-	draw: function() {
-		ctx.drawImage(this.canvas, this.x, this.y);
-	},
+    draw: function() {
+        ctx.drawImage(this.canvas, this.x, this.y);
+    },
 
-	translate: function(x, y) {
+    translate: function(x, y) {
 
-		x = Math.round((x - this.x) / this.size);
-		y = Math.round((y - this.y) / this.size);
+        x = Math.round((x - this.x) / this.size);
+        y = Math.round((y - this.y) / this.size);
 
-		return {
-			x: x - this.origo.x,
-			y: y - this.origo.y
-		};
-	},
+        return {
+            x: x - this.origo.x,
+            y: y - this.origo.y
+        };
+    },
 
-	toPoint: function(p) {
-		return {
-			x: (p.x + this.origo.x) * this.size + this.x + 0.5,
-			y: (p.y + this.origo.y) * this.size + this.y + 0.5,
-			visible: p.visible,
-		};
-	}
+    toPoint: function(p) {
+        return {
+            x: (p.x + this.origo.x) * this.size + this.x + 0.5,
+            y: (p.y + this.origo.y) * this.size + this.y + 0.5,
+            visible: p.visible,
+        };
+    }
 };
 
 
@@ -501,196 +510,210 @@ redraw();
 window.onresize = windowResize;
 
 form.zoom.onchange = function() {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	grid.set(parseInt(this.value));
-	redraw();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    grid.set(parseInt(this.value));
+    redraw();
 };
 
 window.onmousedown = function(evt) {
-	var x = evt.x - 5;
-	var y = evt.y - 5;
+    var x = evt.x - 5;
+    var y = evt.y - 5;
 
-	if (0 > x || canvas.width < x ||
-		0 > y || canvas.height < y
-	) {
-		return;
-	}
+    if (0 > x || canvas.width < x ||
+        0 > y || canvas.height < y
+    ) {
+        return;
+    }
 
-	var click = grid.translate(x, y);
-	var index, i, len;
-	switch(currentTool){
-		case Tools.LINE:
-			shape.addPoint(click);
-			if (shape.last > 0 &&
-				click.x === shape.points[0].x &&
-				click.y === shape.points[0].y
-			) {
-				currentTool = Tools.MOVE;
-			}
-			history.commit(shape.points);
-			break;
+    var click = grid.translate(x, y);
+    var index, i, len;
+    switch(currentTool){
+        case Tools.LINE:
+            shape.addPoint(click);
+            if (shape.last > 0 &&
+                click.x === shape.points[0].x &&
+                click.y === shape.points[0].y
+            ) {
+                currentTool = Tools.MOVE;
+            }
+            history.commit(shape.points);
+            break;
 
-		case Tools.MOVE:
-			if (handleIsSelected){
-				handleIsSelected = false;
-				history.commit(shape.points);
-			}
-			else{
-				index = closestPoint(click);
-				if(index !== null){
-					handleIsSelected = true;
-					selectedHandleIndex = index;
-				}
-			}
-			break;
+        case Tools.MOVE:
+            if (handleIsSelected){
+                handleIsSelected = false;
+                history.commit(shape.points);
+            }
+            else{
+                index = closestPoint(click);
+                if(index !== null){
+                    handleIsSelected = true;
+                    selectedHandleIndex = index;
+                }
+            }
+            break;
 
-		case Tools.ADD:
-			len = shape.points.length;
-			var shortestDistance = 10000000000;
-			var matchIndex = 0;
-			if(len >= 2){
-				// Find the nearest line segment to the click
-				for (i=0; i<len-1; i++){
-					var distance = distanceToSegment(click, shape.points[i], shape.points[i+1]);
-					if(distance<shortestDistance){
-						shortestDistance = distance;
-						matchIndex = i;
-					}
-				}
-				// Add the new point
-				shape.points.splice(matchIndex+1,0,click);
-				++shape.last;
-				history.commit(shape.points);
-			}
-			break;
+        case Tools.ADD:
+            len = shape.points.length;
+            var shortestDistance = 10000000000;
+            var matchIndex = 0;
+            if(len >= 2){
+                // Find the nearest line segment to the click
+                for (i=0; i<len-1; i++){
+                    var distance = distanceToSegment(click, shape.points[i], shape.points[i+1]);
+                    if(distance<shortestDistance){
+                        shortestDistance = distance;
+                        matchIndex = i;
+                    }
+                }
+                // Add the new point
+                shape.points.splice(matchIndex+1,0,
+                    {x:click.x, y:click.y, visible:true});
+                ++shape.last;
+                history.commit(shape.points);
+            }
+            break;
 
-		case Tools.CUT:
-			index = closestPoint(click);
-			shape.points.splice(index, 1);
-			--shape.last;
-			history.commit(shape.points);
-			break;
+        case Tools.CUT:
+            index = closestPoint(click);
+            shape.points.splice(index, 1);
+            --shape.last;
+            history.commit(shape.points);
+            break;
 
-		case Tools.ORIGIN:
-			// Move the origin to the click location
-			for (i=0, len = shape.points.length; i<len; i++){
-				shape.points[i].x -= click.x;
-				shape.points[i].y -= click.y;
-			}
-			history.commit(shape.points);
-			break;
-		case Tools.VISIBILITY:
-			// Toggle visibility of closest point
-			index = closestPoint(click);
-			if(index !== null){
-				shape.points[index].visible = !shape.points[index].visible;
-			}
-			history.commit(shape.points);
-			break;
-	}
+        case Tools.ORIGIN:
+            // Move the origin to the click location
+            for (i=0, len = shape.points.length; i<len; i++){
+                shape.points[i].x -= click.x;
+                shape.points[i].y -= click.y;
+            }
+            history.commit(shape.points);
+            break;
+        case Tools.VISIBILITY:
+            // Toggle visibility of closest point
+            index = closestPoint(click);
+            if(index !== null){
+                // First point may not be invisible
+                // Two consecutive points may not be invisible
+                // Last and next-to-last point may not be invisible
+                if(   (index>0 && shape.points[index-1].visible)
+                   && !(shape.points.length-1>index && !shape.points[index+1].visible)
+                   && (index < shape.points.length-2))
+                {
+                    shape.points[index].visible = !shape.points[index].visible;
+                }
+            }
+            history.commit(shape.points);
+            break;
+    }
 
-	redraw();
+    redraw();
 };
 
 window.onmousemove = function(evt) {
-	var x = evt.x - 5;
-	var y = evt.y - 5;
+    var x = evt.x - 5;
+    var y = evt.y - 5;
 
-	if (0 > x || canvas.width < x ||
-		0 > y || canvas.height < y
-	) {
-		return;
-	}
+    if (0 > x || canvas.width < x ||
+        0 > y || canvas.height < y
+    ) {
+        return;
+    }
 
-	mousePos = grid.translate(x, y);
-	redraw();
+    mousePos = grid.translate(x, y);
+    redraw();
 
-	if (currentTool === Tools.LINE && shape.last >= 0) {
-		var c = grid.toPoint(shape.getLast());
+    if (currentTool === Tools.LINE && shape.last >= 0) {
+        var c = grid.toPoint(shape.getLast());
 
-		ctx.beginPath();
-		ctx.moveTo(c.x, c.y);
-		ctx.lineTo(x, y);
-		ctx.stroke();
-	}
-	else if (currentTool === Tools.MOVE && handleIsSelected) {
-		shape.points[selectedHandleIndex].x = mousePos.x;
-		shape.points[selectedHandleIndex].y = mousePos.y;
-	}
+        ctx.setLineDash([]);
+        ctx.strokeStyle = 'gray';
+        ctx.beginPath();
+        ctx.moveTo(c.x, c.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    }
+    else if (currentTool === Tools.MOVE && handleIsSelected) {
+        shape.points[selectedHandleIndex].x = mousePos.x;
+        shape.points[selectedHandleIndex].y = mousePos.y;
+    }
 };
 
 // Button
 document.getElementById("pencil").onclick = function() {
-	switchTool(Tools.LINE);
+    switchTool(Tools.LINE);
 };
 document.getElementById("arrows").onclick = function() {
-	switchTool(Tools.MOVE);
+    switchTool(Tools.MOVE);
 };
 document.getElementById("plus").onclick = function() {
-	switchTool(Tools.ADD);
+    switchTool(Tools.ADD);
 };
 document.getElementById("scissors").onclick = function() {
-	switchTool(Tools.CUT);
+    switchTool(Tools.CUT);
 };
 document.getElementById("crosshairs").onclick = function() {
-	switchTool(Tools.ORIGIN);
+    switchTool(Tools.ORIGIN);
 };
 document.getElementById("eye-slash").onclick = function() {
-	switchTool(Tools.VISIBILITY);
+    switchTool(Tools.VISIBILITY);
 };
 document.getElementById("code").onclick = function() {
-	currentStyle = (currentStyle + 1) % 4;
-	drawPoints();
+    currentStyle = (currentStyle + 1) % 4;
+    drawPoints();
 };
 document.getElementById("clipboard").onclick = function() {
-	text.focus();
-	text.select();
+    text.focus();
+    text.select();
 };
 document.getElementById("copy").onclick = function() {
-	var url = window.location.href.split("?")[0] + "?" + text.value;
-	window.open(url);
+    var url = window.location.href.split("?")[0] + "?" + text.value;
+    window.open(url);
 };
 document.getElementById("refresh").onclick = function() {
-	if(confirm("Clear all polygon points and start over? This operation cannot be undone.")){
-		switchTool(Tools.LINE);
-		shape = new Shape(false);
-		history.clear();
-		redraw();
-	}
+    if(confirm("Clear all polygon points and start over? This operation cannot be undone.")){
+        switchTool(Tools.LINE);
+        shape = new Shape(false);
+        history.clear();
+        redraw();
+    }
 };
 document.getElementById("undo").onclick = function() {
-	undo();
+    undo();
 };
 document.getElementById("redo").onclick = function() {
-	redo();
+    redo();
 };
 
 // Keyboard handler
 document.addEventListener("keydown", function(evt) {
-	switch(evt.keyCode){
-		case 77: // "M"
-		case 27: // <escape>
-			switchTool(Tools.MOVE);
-			break;
-		case 76: // "L"
-			switchTool(Tools.LINE);
-			break;
-		case 65: // "A"
-			switchTool(Tools.ADD);
-			break;
-		case 67: // "C"
-			switchTool(Tools.CUT);
-			break;
-		case 79: // "O"
-			switchTool(Tools.ORIGIN);
-			break;
-		case 85: // "U"
-			undo();
-			break;
-		case 82: // "R"
-			redo();
-			break;
-	}
+    switch(evt.keyCode){
+        case 77: // "M"
+        case 27: // <escape>
+            switchTool(Tools.MOVE);
+            break;
+        case 76: // "L"
+            switchTool(Tools.LINE);
+            break;
+        case 65: // "A"
+            switchTool(Tools.ADD);
+            break;
+        case 67: // "C"
+            switchTool(Tools.CUT);
+            break;
+        case 79: // "O"
+            switchTool(Tools.ORIGIN);
+            break;
+        case 86: // "V"
+            switchTool(Tools.VISIBILITY);
+            break;
+        case 85: // "U"
+            undo();
+            break;
+        case 82: // "R"
+            redo();
+            break;
+    }
 });
 
 }).call();
