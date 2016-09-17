@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>PolygonDraw</title>
+	<title>Test</title>
 
 	<meta name="viewport" content="user-scalable=no" />
 	<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-	
-	<style>*{padding:0;margin:0}input:focus,textarea:focus{outline:0}input[type=range]{-webkit-appearance:none;background-color:#ccc;height:2px;margin:5px 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;border-radius:6px;border:1px solid #ccc;background-color:#fff;width:12px;height:12px}canvas{background-color:#fff;display:block;position:absolute;margin:auto;top:5px;left:5px;border:1px solid #ccc}div{display:block;position:absolute;right:5px;top:5px;width:340px;border:1px solid #ccc}ul{position:absolute}ol{border:1px solid #ccc;width:318px;position:absolute}ol li{padding:1px 10px;border:none;border-right:1px solid #e0e0e0}li{color:#555;display:inline-block;border:1px solid #e0e0e0;padding:5px 10px;margin-right:-1px;cursor:pointer}li:hover{background-color:#ececec}ul li:first-child{border-top-left-radius:4px;border-bottom-left-radius:4px}ul li:last-child{border-top-right-radius:4px;border-bottom-right-radius:4px}input,textarea{position:absolute;bottom:10px;right:10px;width:320px;max-width:320px;border:1px solid #ccc;box-sizing:border-box;-moz-box-sizing:border-box}textarea{resize:none;top:50px;padding:10px;bottom:110px}textarea:focus{outline:0}label{border:1px solid #ccc}</style>
+	<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -24,9 +23,11 @@
 		<li id="plus"><i class="fa fa-plus"></i>
 		<li id="scissors"><i class="fa fa-scissors"></i>
 		<li id="crosshairs"><i class="fa fa-crosshairs"></i>
+		<li id="eye-slash"><i class="fa fa-eye-slash"></i>
 		</li>
 	</ul>
-	<ul style="top:10px;right:11px;">
+
+	<ul style="top:45px;left:10px;">
 		<li id="undo"><i class="fa fa-undo"></i>
 		<li id="redo"><i class="fa fa-repeat"></i>
 		<li id="refresh"><i class="fa fa-trash-o"></i></li>
@@ -75,6 +76,7 @@ var Tools = {
 	ADD: 2,
 	CUT: 3,
 	ORIGIN: 4,
+	VISIBILITY: 5,
 }
 var Styles = {
 	ARRAY: 0,
@@ -211,11 +213,12 @@ function redraw(){
 	
 	// Show mouse coordinates
 	ctx.save();
-	ctx.fillStyle = "#000";
+	ctx.fillStyle = "#fff";
+	ctx.font="12px Helvetica";
 	ctx.fillText("("+mousePos.x+", "+mousePos.y+")", 10, 15);
 
 	// Show current tool
-	var modeText = ""
+	var modeText = "";
 	switch(currentTool){
 		case Tools.MOVE:
 			modeText = "Move";
@@ -231,6 +234,9 @@ function redraw(){
 			break;
 		case Tools.ORIGIN:
 			modeText = "Change Origin";
+			break;
+		case Tools.VISIBILITY:
+			modeText = "Toggle Visibility";
 			break;
 	}
 	ctx.fillText(modeText, 10, 30);
@@ -250,12 +256,13 @@ Shape.prototype = {
 			// Can supply initial point data in URL following "?".
 			// For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
 			var pointsString = window.location.search.substring(1);
-			if (pointsString != ""){
+			if (pointsString !== ""){
 				var pointArray = JSON.parse(pointsString);
 				if (pointArray.length % 2 === 0){
 					for(var i=0,len=pointArray.length; i<len; i+=2){
-						this.points.push({x:pointArray[i],y:pointArray[i+1]});
+						this.points.push({x:pointArray[i],y:pointArray[i+1],visible:true});
 					}
+					//TODO:Post process visibility
 					this.last = this.points.length - 1;
 					// Start in MOVE mode if starting with an existing dataset
 					currentTool = Tools.MOVE;
@@ -272,6 +279,7 @@ Shape.prototype = {
 		) {
 			return;
 		}
+		p.visible=true;
 		this.points.push(p);
 		this.last = this.points.length - 1;
 	},
@@ -280,7 +288,7 @@ Shape.prototype = {
 		return {
 			x: this.points[this.last].x,
 			y: this.points[this.last].y
-		}
+		};
 	},
 
 	draw: function(grid_) {
@@ -289,6 +297,7 @@ Shape.prototype = {
 
 		// Draw lines
 		if(this.last >= 1){
+			ctx.strokeStyle = 'white';
 			ctx.beginPath();
 			for (var i = 0; i <= this.last; i++) {
 				var p = grid_.toPoint(this.points[i]);
@@ -297,6 +306,19 @@ Shape.prototype = {
 					continue;
 				}
 				ctx.lineTo(p.x, p.y);
+
+				if(p.visible){
+					ctx.stroke();
+					ctx.strokeStyle = 'white';
+					ctx.beginPath();
+					ctx.moveTo(p.x, p.y);
+				}
+				else{
+					ctx.stroke();
+					ctx.strokeStyle = 'green';
+					ctx.beginPath();
+					ctx.moveTo(p.x, p.y);
+				}
 			}
 			ctx.stroke();
 		}
@@ -361,7 +383,7 @@ History.prototype = {
 		++this.tail;
 		if(this.tail>this.pointsHistory.length-1){
 			this.tail = this.pointsHistory.length-1;
-			console.log("Nothing to redo.")
+			console.log("Nothing to redo.");
 		}
 		if(this.tail === -1){
 			return [];
@@ -374,7 +396,7 @@ History.prototype = {
 	clone: function(points){
 		var pointsClone = [];
 		for(var i=0, len=points.length; i<len; i++){
-			pointsClone.push({x:points[i].x, y:points[i].y});
+			pointsClone.push({x:points[i].x, y:points[i].y, visible:points[i].visible});
 		}
 		return pointsClone;
 	},
@@ -415,8 +437,8 @@ Grid.prototype = {
 			h = this.height-1;
 
 		this.ctx.save();
-		this.ctx.strokeStyle = "#e4e4e4";
-		this.ctx.fillStyle = "#fff";
+		this.ctx.strokeStyle = "#282828";
+		this.ctx.fillStyle = "#000";
 		this.ctx.fillRect(0, 0, this.width, this.height);
 
 		this.ctx.beginPath();
@@ -435,7 +457,7 @@ Grid.prototype = {
 		this.ctx.stroke();
 
 		this.ctx.beginPath();
-		this.ctx.fillStyle = "#aaa";
+		this.ctx.fillStyle = "#383838";
 		this.ctx.arc(this.origo.x * this.size + 0.5, this.origo.y * this.size + 0.5, 5, 0, 2*Math.PI);
 		this.ctx.fill();
 
@@ -454,14 +476,15 @@ Grid.prototype = {
 		return {
 			x: x - this.origo.x,
 			y: y - this.origo.y
-		}
+		};
 	},
 
 	toPoint: function(p) {
 		return {
 			x: (p.x + this.origo.x) * this.size + this.x + 0.5,
-			y: (p.y + this.origo.y) * this.size + this.y + 0.5
-		}
+			y: (p.y + this.origo.y) * this.size + this.y + 0.5,
+			visible: p.visible,
+		};
 	}
 };
 
@@ -475,13 +498,13 @@ history = new History();
 windowResize();
 redraw();
 
-window.onresize = windowResize
+window.onresize = windowResize;
 
 form.zoom.onchange = function() {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	grid.set(parseInt(this.value));
 	redraw();
-}
+};
 
 window.onmousedown = function(evt) {
 	var x = evt.x - 5;
@@ -494,7 +517,7 @@ window.onmousedown = function(evt) {
 	}
 
 	var click = grid.translate(x, y);
-
+	var index, i, len;
 	switch(currentTool){
 		case Tools.LINE:
 			shape.addPoint(click);
@@ -513,8 +536,8 @@ window.onmousedown = function(evt) {
 				history.commit(shape.points);
 			}
 			else{
-				var index = closestPoint(click);
-				if(index != null){
+				index = closestPoint(click);
+				if(index !== null){
 					handleIsSelected = true;
 					selectedHandleIndex = index;
 				}
@@ -522,12 +545,12 @@ window.onmousedown = function(evt) {
 			break;
 
 		case Tools.ADD:
-			var len = shape.points.length;
+			len = shape.points.length;
 			var shortestDistance = 10000000000;
 			var matchIndex = 0;
 			if(len >= 2){
 				// Find the nearest line segment to the click
-				for (var i=0; i<len-1; i++){
+				for (i=0; i<len-1; i++){
 					var distance = distanceToSegment(click, shape.points[i], shape.points[i+1]);
 					if(distance<shortestDistance){
 						shortestDistance = distance;
@@ -542,7 +565,7 @@ window.onmousedown = function(evt) {
 			break;
 
 		case Tools.CUT:
-			var index = closestPoint(click);
+			index = closestPoint(click);
 			shape.points.splice(index, 1);
 			--shape.last;
 			history.commit(shape.points);
@@ -550,16 +573,24 @@ window.onmousedown = function(evt) {
 
 		case Tools.ORIGIN:
 			// Move the origin to the click location
-			for (var i=0, len = shape.points.length; i<len; i++){
+			for (i=0, len = shape.points.length; i<len; i++){
 				shape.points[i].x -= click.x;
 				shape.points[i].y -= click.y;
+			}
+			history.commit(shape.points);
+			break;
+		case Tools.VISIBILITY:
+			// Toggle visibility of closest point
+			index = closestPoint(click);
+			if(index !== null){
+				shape.points[index].visible = !shape.points[index].visible;
 			}
 			history.commit(shape.points);
 			break;
 	}
 
 	redraw();
-}
+};
 
 window.onmousemove = function(evt) {
 	var x = evt.x - 5;
@@ -586,36 +617,39 @@ window.onmousemove = function(evt) {
 		shape.points[selectedHandleIndex].x = mousePos.x;
 		shape.points[selectedHandleIndex].y = mousePos.y;
 	}
-}
+};
 
 // Button
 document.getElementById("pencil").onclick = function() {
 	switchTool(Tools.LINE);
-}
+};
 document.getElementById("arrows").onclick = function() {
 	switchTool(Tools.MOVE);
-}
+};
 document.getElementById("plus").onclick = function() {
 	switchTool(Tools.ADD);
-}
+};
 document.getElementById("scissors").onclick = function() {
 	switchTool(Tools.CUT);
-}
+};
 document.getElementById("crosshairs").onclick = function() {
 	switchTool(Tools.ORIGIN);
-}
+};
+document.getElementById("eye-slash").onclick = function() {
+	switchTool(Tools.VISIBILITY);
+};
 document.getElementById("code").onclick = function() {
 	currentStyle = (currentStyle + 1) % 4;
 	drawPoints();
-}
+};
 document.getElementById("clipboard").onclick = function() {
 	text.focus();
 	text.select();
-}
+};
 document.getElementById("copy").onclick = function() {
 	var url = window.location.href.split("?")[0] + "?" + text.value;
 	window.open(url);
-}
+};
 document.getElementById("refresh").onclick = function() {
 	if(confirm("Clear all polygon points and start over? This operation cannot be undone.")){
 		switchTool(Tools.LINE);
@@ -623,13 +657,13 @@ document.getElementById("refresh").onclick = function() {
 		history.clear();
 		redraw();
 	}
-}
+};
 document.getElementById("undo").onclick = function() {
 	undo();
-}
+};
 document.getElementById("redo").onclick = function() {
 	redo();
-}
+};
 
 // Keyboard handler
 document.addEventListener("keydown", function(evt) {
