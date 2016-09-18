@@ -37,25 +37,33 @@
         <li><i class="fa fa-file fa-rotate-180"></i></li><li><i class="fa fa-trash-o"></i></li>
     </ol> -->
 
+    <ul style="top:80px;left:10px;">
+        <li id="color:1" style="background-color:#2020FF"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#FFFFFF"><i class="fa fa-paint-brush"></i>
+        <li id="color:3" style="background-color:#00FF00"><i class="fa fa-paint-brush"></i>
+        <li id="color:4" style="background-color:#FFFF00"><i class="fa fa-paint-brush"></i>
+        <li id="color:5" style="background-color:#FF0000"><i class="fa fa-paint-brush"></i>
+        <li id="color:6" style="background-color:#00FFFF"><i class="fa fa-paint-brush"></i>
+        <li id="color:7" style="background-color:#FF00FF"><i class="fa fa-paint-brush"></i>
+        <li id="color:8" style="background-color:#008080"><i class="fa fa-paint-brush"></i>
+    </ul>
+
+    <ul style="top:115px;left:10px;">
+        <li id="color:9" style="background-color:#E55300"><i class="fa fa-paint-brush"></i>
+        <li id="color:10" style="background-color:#8B4513"><i class="fa fa-paint-brush"></i>
+        <li id="color:11" style="background-color:#808000"><i class="fa fa-paint-brush"></i>
+        <li id="color:12" style="background-color:#808080"><i class="fa fa-paint-brush"></i>
+        <li id="color:13" style="background-color:#404040"><i class="fa fa-paint-brush"></i>
+        <li id="color:14" style="background-color:#87CEFA"><i class="fa fa-paint-brush"></i>
+        <li id="color:15" style="background-color:#1E90FF"><i class="fa fa-paint-brush"></i>
+        <li id="color:16" style="background-color:#ADD8E6"><i class="fa fa-paint-brush"></i>
+    </ul> 
+    
     <ul style="bottom:40px;right:11px">
         <li id="copy"><i class="fa fa-copy"></i>
         <li id="clipboard"><i class="fa fa-clipboard"></i>
         <li id="code"><i class="fa fa-code"></i></li>
     </ul>
-
-     <ul style="top:80px;left:10px;">
-        <li id="color:1" style="background-color:#2020FF"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#FFFFFF"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#00FF00"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#FFFF00"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#FF0000"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#00FFFF"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#FF00FF"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#008080"><i class="fa fa-paint-brush"></i>
-        <!-- <li id="color:2" style="background-color:#E55300"><i class="fa fa-paint-brush"></i> -->
-    </ul>
-
-    
 </div>
 
 <style>
@@ -91,6 +99,7 @@ var Tools = {
     CUT: 3,
     ORIGIN: 4,
     VISIBILITY: 5,
+    COLORIZE: 6
 };
 var Styles = {
     ARRAY: 0,
@@ -126,6 +135,8 @@ var COLORS = [
     "#1E90FF", // 15 DODGERBLUE   
     "#ADD8E6", // 16 LIGHTBLUE    
 ];
+
+var current_selected_color = COLORS[1];
 
 // Functions
 function windowResize() {
@@ -174,7 +185,21 @@ function drawPoints() {
         case Styles.ONE_ARRAY:
             for (var i = 0; i <= shape.last; i++) {
                 var p = shape.points[i];
+                var color_string = null;
+                if(p.color){
+                    color_string = PEN_COMMAND+","+(PEN_UP + p.color)+",";
+                }
+
+                if(i===0 && color_string){
+                    s+=color_string;
+                }
+                
                 s += p.x+","+p.y+",";
+                
+                if(i!==0 && color_string){
+                    s+=color_string;
+                }
+
                 if(!p.visible){
                     s += PEN_COMMAND+","+PEN_UP+",";
                 }
@@ -221,7 +246,7 @@ function closestPoint(searchPoint) {
     // Find the nearest line segment to the click
     for (var i=0; i<len; i++){
         var distance = pointDistance(searchPoint, shape.points[i]);
-        if(distance<shortestDistance){
+        if(distance<=shortestDistance){
             shortestDistance = distance;
             matchIndex = i;
         }
@@ -278,6 +303,9 @@ function redraw(){
         case Tools.VISIBILITY:
             modeText = "Toggle Visibility";
             break;
+        case Tools.COLORIZE:
+            modeText = "Colorize";
+            break;
     }
     ctx.fillText(modeText, 10, 30);
     ctx.restore();
@@ -300,7 +328,12 @@ Shape.prototype = {
                 var pointArray = JSON.parse(pointsString);
                 if (pointArray.length % 2 === 0){
                     for(var i=0,len=pointArray.length; i<len; i+=2){
-                        this.points.push({x:pointArray[i],y:pointArray[i+1],visible:true});
+                        this.points.push({
+                            x:pointArray[i],
+                            y:pointArray[i+1],
+                            visible:true,
+                            color:null
+                        });
                     }
                     //TODO:Post process visibility
                     this.last = this.points.length - 1;
@@ -320,6 +353,7 @@ Shape.prototype = {
             return;
         }
         p.visible=true;
+        p.color=null;
         this.points.push(p);
         this.last = this.points.length - 1;
     },
@@ -337,28 +371,37 @@ Shape.prototype = {
 
         // Draw lines
         if(this.last >= 1){
-            ctx.strokeStyle = 'white';
+            if(this.points[0].color){
+                line_color = COLORS[this.points[0].color];
+            }
+            else{
+                line_color = 'white';
+            }
+            ctx.strokeStyle = line_color;
             ctx.lineWidth=2;
             ctx.beginPath();
-            for (var i = 0; i <= this.last; i++) {
+            for (var i=0; i <= this.last; i++) {
                 var p = grid_.toPoint(this.points[i]);
                 if (i === 0) {
                     ctx.moveTo(p.x, p.y);
                     continue;
                 }
                 ctx.lineTo(p.x, p.y);
+                ctx.stroke();
+
+                if(p.color){
+                    line_color=COLORS[p.color];
+                }
 
                 if(p.visible){
-                    ctx.stroke();
+                    ctx.strokeStyle = line_color;
                     ctx.setLineDash([]);
-                    ctx.strokeStyle = 'white';
                     ctx.beginPath();
                     ctx.moveTo(p.x, p.y);
                 }
                 else{
-                    ctx.stroke();
-                    ctx.setLineDash([5, 10]);
                     ctx.strokeStyle = 'gray';
+                    ctx.setLineDash([5, 10]);
                     ctx.beginPath();
                     ctx.moveTo(p.x, p.y);
                 }
@@ -439,7 +482,12 @@ History.prototype = {
     clone: function(points){
         var pointsClone = [];
         for(var i=0, len=points.length; i<len; i++){
-            pointsClone.push({x:points[i].x, y:points[i].y, visible:points[i].visible});
+            pointsClone.push({
+                x:points[i].x,
+                y:points[i].y,
+                visible:points[i].visible,
+                color:points[i].color
+            });
         }
         return pointsClone;
     },
@@ -528,6 +576,7 @@ Grid.prototype = {
             x: (p.x + this.origo.x) * this.size + this.x + 0.5,
             y: (p.y + this.origo.y) * this.size + this.y + 0.5,
             visible: p.visible,
+            color: p.color
         };
     }
 };
@@ -640,6 +689,14 @@ window.onmousedown = function(evt) {
             }
             history.commit(shape.points);
             break;
+        case Tools.COLORIZE:
+            // Toggle visibility of closest point
+            index = closestPoint(click);
+            if(index !== null){
+                shape.points[index].color = current_selected_color;
+            }
+            history.commit(shape.points);
+            break;
     }
 
     redraw();
@@ -693,6 +750,17 @@ document.getElementById("crosshairs").onclick = function() {
 document.getElementById("eye-slash").onclick = function() {
     switchTool(Tools.VISIBILITY);
 };
+
+var color_index;
+for(color_index = 1; color_index<=16; color_index++){
+    (function (_color_index) {
+        document.getElementById("color:" + _color_index).onclick = function() {
+            switchTool(Tools.COLORIZE);
+            current_selected_color = _color_index;
+        };
+    })(color_index);
+}
+
 document.getElementById("code").onclick = function() {
     currentStyle = (currentStyle + 1) % 4;
     drawPoints();
