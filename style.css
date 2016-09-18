@@ -94,9 +94,9 @@ input,textarea{
 
 textarea{
     resize:none;
-    top:100px;
+    top:115px;
     padding:10px;
-    bottom:110px}
+    bottom:75px}
 
 textarea:focus{
     outline:0

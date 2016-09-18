@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Test</title>
+    <title>PolygonDraw</title>
 
     <meta name="viewport" content="user-scalable=no" />
-    <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <link href="https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -42,6 +42,20 @@
         <li id="clipboard"><i class="fa fa-clipboard"></i>
         <li id="code"><i class="fa fa-code"></i></li>
     </ul>
+
+     <ul style="top:80px;left:10px;">
+        <li id="color:1" style="background-color:#2020FF"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#FFFFFF"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#00FF00"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#FFFF00"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#FF0000"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#00FFFF"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#FF00FF"><i class="fa fa-paint-brush"></i>
+        <li id="color:2" style="background-color:#008080"><i class="fa fa-paint-brush"></i>
+        <!-- <li id="color:2" style="background-color:#E55300"><i class="fa fa-paint-brush"></i> -->
+    </ul>
+
+    
 </div>
 
 <style>
@@ -77,13 +91,13 @@ var Tools = {
     CUT: 3,
     ORIGIN: 4,
     VISIBILITY: 5,
-}
+};
 var Styles = {
     ARRAY: 0,
     ONE_ARRAY: 1,
     NORMALIZED: 2,
     ONE_NORMALIZED: 3
-}
+};
 var shape, grid, history, currentTool = Tools.LINE, currentStyle = Styles.ONE_ARRAY, mousePos={x:0,y:0};
 
 var HANDLE_RADIUS = 4;
@@ -92,6 +106,26 @@ var selectedHandleIndex = 0;
 
 var PEN_COMMAND = 9000;
 var PEN_UP = 8000;
+
+var COLORS = [
+    "#000000", // 00 (Penup)      
+    "#2020FF", // 01 BLUE         
+    "#FFFFFF", // 02 WHITE        
+    "#00FF00", // 03 GREEN        
+    "#FFFF00", // 04 YELLOW       
+    "#FF0000", // 05 RED          
+    "#00FFFF", // 06 CYAN         
+    "#FF00FF", // 07 MAGENTA      
+    "#008080", // 08 CYAN_DK          
+    "#E55300", // 09 ORANGE       
+    "#8B4513", // 10 BROWN        
+    "#808000", // 11 YELLOW_DK    
+    "#808080", // 12 GRAY         
+    "#404040", // 13 GRAY_DK      
+    "#87CEFA", // 14 LIGHTSKYBLUE 
+    "#1E90FF", // 15 DODGERBLUE   
+    "#ADD8E6", // 16 LIGHTBLUE    
+];
 
 // Functions
 function windowResize() {
@@ -447,6 +481,7 @@ Grid.prototype = {
 
         this.ctx.save();
         this.ctx.strokeStyle = "#282828";
+        //this.ctx.strokeStyle = "#b00";
         this.ctx.fillStyle = "#000";
         this.ctx.fillRect(0, 0, this.width, this.height);
 
