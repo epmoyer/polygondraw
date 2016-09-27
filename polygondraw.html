@@ -191,14 +191,10 @@ function drawPoints() {
                 if(p.color){
                     color_string = PEN_COMMAND+","+(PEN_COLOR0 + p.color)+",";
                 }
-
-                if(i===0 && color_string){
-                    s+=color_string;
-                }
                 
                 s += p.x+","+p.y+",";
                 
-                if(i!==0 && color_string){
+                if(color_string){
                     s+=color_string;
                 }
 
