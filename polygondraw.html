@@ -15,22 +15,23 @@
 <div>
     <form>
         <textarea name="coords" readonly></textarea>
-        <input type="range" name="zoom" min="15" max="40">
+        <input type="range" name="zoom" min="5" max="40">
     </form>
     <ul style="top:10px;left:10px">
-        <li id="arrows"><i class="fa fa-arrows"></i>
-        <li id="pencil"><i class="fa fa-pencil"></i>
-        <li id="plus"><i class="fa fa-plus"></i>
-        <li id="scissors"><i class="fa fa-scissors"></i>
-        <li id="crosshairs"><i class="fa fa-crosshairs"></i>
-        <li id="eye-slash"><i class="fa fa-eye-slash"></i>
+        <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i>
+        <li id="pencil"><i class="fa fa-pencil" title="L: Line"></i>
+        <li id="plus"><i class="fa fa-plus" title="A: Add"></i>
+        <li id="scissors"><i class="fa fa-scissors" title="C: Cut"></i>
+        <li id="crosshairs"><i class="fa fa-crosshairs" title="O: Change Origin"></i>
+        <li id="eye-slash"><i class="fa fa-eye-slash" title="V: Toggle Visibility"></i>
+        <li id="anchor"><i class="fa fa-anchor" title="S: Toggle Grid Snap"></i>
         </li>
     </ul>
 
     <ul style="top:45px;left:10px;">
-        <li id="undo"><i class="fa fa-undo"></i>
-        <li id="redo"><i class="fa fa-repeat"></i>
-        <li id="refresh"><i class="fa fa-trash-o"></i></li>
+        <li id="undo"><i class="fa fa-undo" title="U: Undo"></i>
+        <li id="redo"><i class="fa fa-repeat" title="R: Redo"></i>
+        <li id="refresh"><i class="fa fa-trash-o" title="Delete All"></i></li>
     </ul>
 
     <!-- <ol style="bottom:89px;left:10px;">
@@ -60,9 +61,8 @@
     </ul> 
     
     <ul style="bottom:40px;right:11px">
-        <li id="copy"><i class="fa fa-copy"></i>
-        <li id="clipboard"><i class="fa fa-clipboard"></i>
-        <li id="code"><i class="fa fa-code"></i></li>
+        <li id="copy"><i class="fa fa-copy" title="Open polygon in new editor instance as URL"></i>
+        <li id="clipboard"><i class="fa fa-clipboard" title="Select array text"></i>
     </ul>
 </div>
 
@@ -107,7 +107,7 @@ var Styles = {
     NORMALIZED: 2,
     ONE_NORMALIZED: 3
 };
-var shape, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0};
+var shape, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
 
 var HANDLE_RADIUS = 4;
 var handleIsSelected = false;
@@ -166,6 +166,18 @@ function distanceToSegmentSquared(p, v, w) {
 function distanceToSegment(p, v, w) { return Math.sqrt(distanceToSegmentSquared(p, v, w)); }
 //---------------------------------
 
+function formatCoordinate(coordinate){
+    // Return shortest possible string representation, up to 2 digits of precision
+    //   9.00  -> "9"
+    //   9.10  -> "9.1"
+    //   9.12  -> "9.12"
+    //   9.123 -> "9.12"
+    return Number(coordinate.toFixed(2)).toString();
+    // if (text.slice(-2) == '00'){
+    //     return text.split('.')[0];
+    // }
+}
+
 function drawPoints() {
     if (shape.last < 0) {
         text.value = "";
@@ -182,7 +194,7 @@ function drawPoints() {
             color_string = PEN_COMMAND+","+(PEN_COLOR0 + p.color)+",";
         }
         
-        s += p.x+","+p.y+",";
+        s += formatCoordinate(p.x)+","+formatCoordinate(p.y)+",";
         
         if(color_string){
             s+=color_string;
@@ -233,15 +245,23 @@ function switchTool(newTool){
 }
 
 function redraw(){
+    var y_pos = 15;
+    var y_step = 15;
     grid.draw();
     shape.draw(grid);
     drawPoints();
     
     // Show mouse coordinates
     ctx.save();
-    ctx.fillStyle = "#fff";
     ctx.font="12px Helvetica";
-    ctx.fillText("("+mousePos.x+", "+mousePos.y+")", 10, 15);
+    ctx.fillStyle = snap_enabled ? 'white' : 'red';
+    ctx.fillText(snap_enabled ? 'Snap Enabled' : 'Snap Disabled', 10, y_pos);
+    y_pos += y_step;
+
+    ctx.fillStyle = "white";
+    // ctx.fillText("("+mousePos.x.toFixed(2)+", "+mousePos.y.toFixed(2)+")", 10, y_pos);
+    ctx.fillText("("+formatCoordinate(mousePos.x)+", "+formatCoordinate(mousePos.y)+")", 10, y_pos);
+    y_pos += y_step;
 
     // Show current tool
     var modeText = "";
@@ -268,7 +288,7 @@ function redraw(){
             modeText = "Colorize";
             break;
     }
-    ctx.fillText(modeText, 10, 30);
+    ctx.fillText(modeText, 10, y_pos);
     ctx.restore();
 }
 
@@ -341,6 +361,7 @@ Shape.prototype = {
     },
 
     draw: function(grid_) {
+        var i, p, color;
 
         ctx.save();
 
@@ -355,8 +376,8 @@ Shape.prototype = {
             ctx.strokeStyle = line_color;
             ctx.lineWidth=2;
             ctx.beginPath();
-            for (var i=0; i <= this.last; i++) {
-                var p = grid_.toPoint(this.points[i]);
+            for (i=0; i <= this.last; i++) {
+                p = grid_.toPoint(this.points[i]);
                 if (i === 0) {
                     ctx.moveTo(p.x, p.y);
                     continue;
@@ -385,8 +406,7 @@ Shape.prototype = {
         }
 
         // Draw vertex handles
-        for (var i = 0; i <= this.last; i++) {
-            var color;
+        for (i = 0; i <= this.last; i++) {
             if (handleIsSelected && i===selectedHandleIndex){
                 color = 'red';
             }
@@ -396,7 +416,7 @@ Shape.prototype = {
             else {
                 color = 'green';
             }
-            var p = grid_.toPoint(this.points[i]);
+            p = grid_.toPoint(this.points[i]);
             ctx.fillStyle = color;
             ctx.strokeStyle = color;
             ctx.beginPath();
@@ -537,8 +557,16 @@ Grid.prototype = {
 
     translate: function(x, y) {
 
-        x = Math.round((x - this.x) / this.size);
-        y = Math.round((y - this.y) / this.size);
+        if(snap_enabled){
+            // Snap to grid
+            x = Math.round((x - this.x) / this.size);
+            y = Math.round((y - this.y) / this.size);
+        }
+        else{
+            // Free form
+            x = (x - this.x) / this.size;
+            y = (y - this.y) / this.size;
+        }
 
         return {
             x: x - this.origo.x,
@@ -568,7 +596,16 @@ redraw();
 
 window.onresize = windowResize;
 
+
+form.zoom.oninput = function() {
+    // Responds during slide Firefox, Safari, Chrome
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    grid.set(parseInt(this.value));
+    redraw();
+};
+
 form.zoom.onchange = function() {
+    // IE10 support (IE10 does not support oninput)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     grid.set(parseInt(this.value));
     redraw();
@@ -725,7 +762,10 @@ document.getElementById("crosshairs").onclick = function() {
 document.getElementById("eye-slash").onclick = function() {
     switchTool(Tools.VISIBILITY);
 };
-
+document.getElementById("anchor").onclick = function() {
+    snap_enabled = !snap_enabled;
+    redraw();
+};
 var color_index;
 for(color_index = 1; color_index<=16; color_index++){
     (function (_color_index) {
@@ -786,6 +826,10 @@ document.addEventListener("keydown", function(evt) {
             break;
         case 82: // "R"
             redo();
+            break;
+        case 83: // "S"
+            snap_enabled = !snap_enabled;
+            redraw();
             break;
     }
 });
