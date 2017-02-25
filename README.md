@@ -1,8 +1,8 @@
 
-# polygondraw
+# Polygondraw
 
 
-Polygondraw is a browser based polygon editor originally written by Max Wihlborg to support his excellent Javascript Asteroids tutorial. I started using it extensively to develop my own vector games, so I ended up fleshing out the feature set.
+Polygondraw is a browser based polygon editor originally written by Max Wihlborg to support his excellent Javascript Asteroids tutorial. I started using it extensively to develop my own vector games (see [vectoralchemy.com](http://www.vectoralchemy.com)), so I ended up fleshing out the feature set.
 
 Button               | Mode               | Hotkey        | Description
 ------               | ------------------ | ------------- | -------------------------------------
@@ -15,11 +15,10 @@ Eye                  |  Toggle Visibility | V             | Toggle the visibilit
 Anchor               |  Toggle Grid Snap  | S             | Toggle snapping to the grid.
 Circular Left Arrow  |  Undo              | U             | Undo
 Circular Right Arrow |  Redo              | R             | Redo
-Trash                |  Clear             | N/A           | Clear all vertices.
-Brushes              |  Color             | N/A           | Set a color
-Copy                 |  Copy              | N/A           | Open a new web page with the current vertices specified in the URL.  NOTE: Bookmarking that URL will bookmark a link which can be used to reopen the polygon again for editing.
-Clipboard            |  Clipboard         | N/A           |  Select the array syntax (for copying/pasting into your code).
-Code                 |  Code Mode         | N/A           |  Cycle through the various array syntax options (ARRAY, ONE_ARRAY, NORMALISED, ONE_NORMALIZED).
+Trash                |  Clear             | _(N/A)_       | Clear all vertices.
+Brushes              |  Color             | _(N/A)_       | Set a color
+Copy                 |  Copy              | _(N/A)_       | Open a new web page with the current vertices specified in the URL.  NOTE: Bookmarking that URL will bookmark a link which can be used to reopen the polygon again for editing.
+Clipboard            |  Clipboard         | _(N/A)_       |  Select the array syntax (for copying/pasting into your code).
 
 # Data format
 Vector data has the form [x1, y1, x2, y2, x3, y3, ...., xN, yN]
