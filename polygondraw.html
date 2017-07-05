@@ -84,6 +84,8 @@ img {
 <script>
 (function() {
 
+var VERSION = "3.1";
+
 // Init GUI Components
 var canvas = document.querySelector("canvas");
 var div = document.querySelector("div");
@@ -245,22 +247,29 @@ function switchTool(newTool){
 }
 
 function redraw(){
+    var x_pos = 10;
     var y_pos = 15;
     var y_step = 15;
     grid.draw();
     shape.draw(grid);
     drawPoints();
     
-    // Show mouse coordinates
     ctx.save();
     ctx.font="12px Helvetica";
-    ctx.fillStyle = snap_enabled ? 'white' : 'red';
-    ctx.fillText(snap_enabled ? 'Snap Enabled' : 'Snap Disabled', 10, y_pos);
+
+    // Show version
+    ctx.fillStyle = "gray";
+    ctx.fillText('PolygonDraw v' + VERSION, x_pos, y_pos);
     y_pos += y_step;
 
+    // Show snap mode
+    ctx.fillStyle = snap_enabled ? 'white' : 'red';
+    ctx.fillText(snap_enabled ? 'Snap Enabled' : 'Snap Disabled', x_pos, y_pos);
+    y_pos += y_step;
+
+    // Show mouse coordinates
     ctx.fillStyle = "white";
-    // ctx.fillText("("+mousePos.x.toFixed(2)+", "+mousePos.y.toFixed(2)+")", 10, y_pos);
-    ctx.fillText("("+formatCoordinate(mousePos.x)+", "+formatCoordinate(mousePos.y)+")", 10, y_pos);
+    ctx.fillText("("+formatCoordinate(mousePos.x)+", "+formatCoordinate(mousePos.y)+")", x_pos, y_pos);
     y_pos += y_step;
 
     // Show current tool
@@ -288,7 +297,7 @@ function redraw(){
             modeText = "Colorize";
             break;
     }
-    ctx.fillText(modeText, 10, y_pos);
+    ctx.fillText(modeText, x_pos, y_pos);
     ctx.restore();
 }
 
