@@ -345,19 +345,35 @@ Shape.prototype = {
         }
     },
 
-    addPoint: function(p) {
+    addPointToEnd: function(position) {
+        var last_point = this.getLastPoint();
         if (this.points.length > 0 &&
-           (p.x === this.getLast().x &&
-            p.y === this.getLast().y)
+           (position.x === last_point.x &&
+            position.y === last_point.y)
         ) {
+            // No noting if the add location is the same as the last point
             return;
         }
-        p.visible=true;
-        p.color=null;
-        this.points.push(p);
+
+        this.addPointAfterIndex(
+            this.points.length - 1,
+            position
+            );
     },
     
-    getLast: function() {
+    addPointAfterIndex: function(index, position){
+        shape.points.splice(
+            index + 1,
+            0,
+            {   x:position.x, 
+                y:position.y, 
+                visible:true, 
+                color:null
+            });
+        this._optimize();
+    },
+
+    getLastPoint: function() {
         if (this.points.length === 0){
             return null;
         }
@@ -367,6 +383,33 @@ Shape.prototype = {
             x: last_point.x,
             y: last_point.y
         };
+    },
+
+
+    deletePoint: function(index){
+        this.points.splice(index, 1);
+        this._optimize();
+    },
+
+    colorizePoint: function(index, color) {
+        this.points[index].color = color;
+        this._optimize();
+    },
+
+    _optimize: function() {
+        // Optimize the color assignments.  Color only needs to be specified once, on
+        // the first node that the color is drawn TO (not from)
+        var i, point, color;
+        color = null;
+        for (i = 0; i < this.points.length; i++) {
+            point = this.points[i];
+            if ((color !== null) && (point.color == color)){
+                point.color = null;
+            }
+            if (point.color !== null){
+                color = point.color;
+            }
+        }
     },
 
     draw: function(grid_) {
@@ -437,7 +480,9 @@ Shape.prototype = {
             ctx.stroke();
         }       
         ctx.restore();
-    }
+    },
+
+
 };
 
 var History = function(){
@@ -598,7 +643,6 @@ Grid.prototype = {
 
 
 // Setup
-
 shape = new Shape(true);
 grid = new Grid();
 history = new History();
@@ -637,7 +681,7 @@ window.onmousedown = function(evt) {
     var index, i, len;
     switch(currentTool){
         case Tools.LINE:
-            shape.addPoint(click);
+            shape.addPointToEnd(click);
             history.commit(shape.points);
             break;
 
@@ -669,15 +713,14 @@ window.onmousedown = function(evt) {
                     }
                 }
                 // Add the new point
-                shape.points.splice(matchIndex+1,0,
-                    {x:click.x, y:click.y, visible:true});
+                shape.addPointAfterIndex(matchIndex, click);
                 history.commit(shape.points);
             }
             break;
 
         case Tools.CUT:
             index = closestPoint(click);
-            shape.points.splice(index, 1);
+            shape.deletePoint(index);
             history.commit(shape.points);
             break;
 
@@ -709,9 +752,9 @@ window.onmousedown = function(evt) {
             // Toggle visibility of closest point
             index = closestPoint(click);
             if(index !== null){
-                shape.points[index].color = current_selected_color;
+                shape.colorizePoint(index, current_selected_color);
+                history.commit(shape.points);
             }
-            history.commit(shape.points);
             break;
     }
 
@@ -732,7 +775,7 @@ window.onmousemove = function(evt) {
     redraw();
 
     if (currentTool === Tools.LINE && shape.points.length > 0) {
-        var c = grid.toPoint(shape.getLast());
+        var c = grid.toPoint(shape.getLastPoint());
 
         ctx.setLineDash([]);
         ctx.strokeStyle = 'gray';
