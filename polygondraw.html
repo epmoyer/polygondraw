@@ -181,34 +181,44 @@ function formatCoordinate(coordinate){
 }
 
 function drawPoints() {
-    if (shape.points.lengh == 0) {
+    if (shape.points.length === 0) {
         text.value = "";
         return;
     }
-    var s = "[";
-    var nb = "\n";
-    var i, p, l;
+    var i, point;
+    var output_items = [];
+    var color_items, point_items;
 
     for (i = 0; i < shape.points.length; i++) {
-        p = shape.points[i];
-        var color_string = null;
-        if(p.color){
-            color_string = PEN_COMMAND+","+(PEN_COLOR0 + p.color)+",";
+        point = shape.points[i];
+
+        point_items = [formatCoordinate(point.x), formatCoordinate(point.y)];
+        if(point.color){
+            color_items = [PEN_COMMAND, PEN_COLOR0 + point.color];
         }
-        
-        s += formatCoordinate(p.x)+","+formatCoordinate(p.y)+",";
-        
-        if(color_string){
-            s+=color_string;
+        else{
+            color_items = [];
         }
 
-        if(!p.visible){
-            s += PEN_COMMAND+","+PEN_UP+",";
+        if (i === 0){
+            output_items = output_items.concat(color_items);
+            output_items = output_items.concat(point_items);
+        }
+        else{
+            output_items = output_items.concat(point_items);
+            output_items = output_items.concat(color_items);
+        }
+
+        if(!point.visible){
+            output_items.push(PEN_COMMAND);
+            output_items.push(PEN_UP);
         }
     }
-    nb = "";
 
-    text.value = s.replace(/,([^,]*)$/, '') + nb + "]";
+    for (i = 0; i < output_items.length; i++) {
+        output_items[i] = output_items[i].toString();
+    }
+    text.value = '[' + output_items.join(',') + ']';
 }
 
 function closestPoint(searchPoint) {
