@@ -181,7 +181,7 @@ function formatCoordinate(coordinate){
 }
 
 function drawPoints() {
-    if (shape.last < 0) {
+    if (shape.points.lengh == 0) {
         text.value = "";
         return;
     }
@@ -189,7 +189,7 @@ function drawPoints() {
     var nb = "\n";
     var i, p, l;
 
-    for (i = 0; i <= shape.last; i++) {
+    for (i = 0; i < shape.points.length; i++) {
         p = shape.points[i];
         var color_string = null;
         if(p.color){
@@ -231,13 +231,11 @@ function closestPoint(searchPoint) {
 
 function undo(){
     shape.points = history.undo();
-    shape.last = shape.points.length -1;
     redraw();
 }
 
 function redo(){
     shape.points = history.redo();
-    shape.last = shape.points.length -1;
     redraw();
 }
 
@@ -308,7 +306,6 @@ var Shape = function(parseUrl) {
 Shape.prototype = {
     reset: function(parseUrl) {
         this.points = [];
-        this.last = -1;
 
         if(parseUrl){
             // Can supply initial point data in URL following "?".
@@ -340,7 +337,6 @@ Shape.prototype = {
                         }
                     }
                     //TODO:Post process visibility
-                    this.last = this.points.length - 1;
                     // Start in MOVE mode if starting with an existing dataset
                     currentTool = Tools.MOVE;
                 }
@@ -350,7 +346,7 @@ Shape.prototype = {
     },
 
     addPoint: function(p) {
-        if (this.last >= 0 &&
+        if (this.points.length > 0 &&
            (p.x === this.getLast().x &&
             p.y === this.getLast().y)
         ) {
@@ -359,13 +355,17 @@ Shape.prototype = {
         p.visible=true;
         p.color=null;
         this.points.push(p);
-        this.last = this.points.length - 1;
     },
     
     getLast: function() {
+        if (this.points.length === 0){
+            return null;
+        }
+
+        last_point = this.points[this.points.length-1];
         return {
-            x: this.points[this.last].x,
-            y: this.points[this.last].y
+            x: last_point.x,
+            y: last_point.y
         };
     },
 
@@ -375,7 +375,7 @@ Shape.prototype = {
         ctx.save();
 
         // Draw lines
-        if(this.last >= 1){
+        if(this.points.length >= 2){
             if(this.points[0].color){
                 line_color = COLORS[this.points[0].color];
             }
@@ -385,7 +385,7 @@ Shape.prototype = {
             ctx.strokeStyle = line_color;
             ctx.lineWidth=2;
             ctx.beginPath();
-            for (i=0; i <= this.last; i++) {
+            for (i=0; i < this.points.length; i++) {
                 p = grid_.toPoint(this.points[i]);
                 if (i === 0) {
                     ctx.moveTo(p.x, p.y);
@@ -415,11 +415,11 @@ Shape.prototype = {
         }
 
         // Draw vertex handles
-        for (i = 0; i <= this.last; i++) {
+        for (i = 0; i < this.points.length; i++) {
             if (handleIsSelected && i===selectedHandleIndex){
                 color = 'red';
             }
-            else if (i == this.last){
+            else if (i == this.points.length - 1){
                 color = 'cyan';
             }
             else if (i == 0){
@@ -638,12 +638,6 @@ window.onmousedown = function(evt) {
     switch(currentTool){
         case Tools.LINE:
             shape.addPoint(click);
-            if (shape.last > 0 &&
-                click.x === shape.points[0].x &&
-                click.y === shape.points[0].y
-            ) {
-                currentTool = Tools.MOVE;
-            }
             history.commit(shape.points);
             break;
 
@@ -677,7 +671,6 @@ window.onmousedown = function(evt) {
                 // Add the new point
                 shape.points.splice(matchIndex+1,0,
                     {x:click.x, y:click.y, visible:true});
-                ++shape.last;
                 history.commit(shape.points);
             }
             break;
@@ -685,7 +678,6 @@ window.onmousedown = function(evt) {
         case Tools.CUT:
             index = closestPoint(click);
             shape.points.splice(index, 1);
-            --shape.last;
             history.commit(shape.points);
             break;
 
@@ -739,7 +731,7 @@ window.onmousemove = function(evt) {
     mousePos = grid.translate(x, y);
     redraw();
 
-    if (currentTool === Tools.LINE && shape.last >= 0) {
+    if (currentTool === Tools.LINE && shape.points.length > 0) {
         var c = grid.toPoint(shape.getLast());
 
         ctx.setLineDash([]);
