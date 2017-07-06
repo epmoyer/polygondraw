@@ -39,25 +39,25 @@
     </ol> -->
 
     <ul style="top:80px;left:10px;">
-        <li id="color:1" style="background-color:#2020FF"><i class="fa fa-paint-brush"></i>
-        <li id="color:2" style="background-color:#FFFFFF"><i class="fa fa-paint-brush"></i>
-        <li id="color:3" style="background-color:#00FF00"><i class="fa fa-paint-brush"></i>
-        <li id="color:4" style="background-color:#FFFF00"><i class="fa fa-paint-brush"></i>
-        <li id="color:5" style="background-color:#FF0000"><i class="fa fa-paint-brush"></i>
-        <li id="color:6" style="background-color:#00FFFF"><i class="fa fa-paint-brush"></i>
-        <li id="color:7" style="background-color:#FF00FF"><i class="fa fa-paint-brush"></i>
-        <li id="color:8" style="background-color:#008080"><i class="fa fa-paint-brush"></i>
+        <li id="color:1" style="background-color:#2020FF"><i class="fa fa-paint-brush" title="Color: BLUE"></i>
+        <li id="color:2" style="background-color:#FFFFFF"><i class="fa fa-paint-brush" title="Color: WHITE"></i>
+        <li id="color:3" style="background-color:#00FF00"><i class="fa fa-paint-brush" title="Color: GREEN"></i>
+        <li id="color:4" style="background-color:#FFFF00"><i class="fa fa-paint-brush" title="Color: YELLOW"></i>
+        <li id="color:5" style="background-color:#FF0000"><i class="fa fa-paint-brush" title="Color: RED"></i>
+        <li id="color:6" style="background-color:#00FFFF"><i class="fa fa-paint-brush" title="Color: CYAN"></i>
+        <li id="color:7" style="background-color:#FF00FF"><i class="fa fa-paint-brush" title="Color: MAGENTA"></i>
+        <li id="color:8" style="background-color:#008080"><i class="fa fa-paint-brush" title="Color: CYAN_DK"></i>
     </ul>
 
     <ul style="top:115px;left:10px;">
-        <li id="color:9" style="background-color:#E55300"><i class="fa fa-paint-brush"></i>
-        <li id="color:10" style="background-color:#8B4513"><i class="fa fa-paint-brush"></i>
-        <li id="color:11" style="background-color:#808000"><i class="fa fa-paint-brush"></i>
-        <li id="color:12" style="background-color:#808080"><i class="fa fa-paint-brush"></i>
-        <li id="color:13" style="background-color:#404040"><i class="fa fa-paint-brush"></i>
-        <li id="color:14" style="background-color:#87CEFA"><i class="fa fa-paint-brush"></i>
-        <li id="color:15" style="background-color:#1E90FF"><i class="fa fa-paint-brush"></i>
-        <li id="color:16" style="background-color:#ADD8E6"><i class="fa fa-paint-brush"></i>
+        <li id="color:9"  style="background-color:#E55300"><i class="fa fa-paint-brush" title="Color: ORANGE"></i>
+        <li id="color:10" style="background-color:#8B4513"><i class="fa fa-paint-brush" title="Color: BROWN"></i>
+        <li id="color:11" style="background-color:#808000"><i class="fa fa-paint-brush" title="Color: YELLOW_DK"></i>
+        <li id="color:12" style="background-color:#808080"><i class="fa fa-paint-brush" title="Color: GRAY"></i>
+        <li id="color:13" style="background-color:#404040"><i class="fa fa-paint-brush" title="Color: GRAY_DK"></i>
+        <li id="color:14" style="background-color:#87CEFA"><i class="fa fa-paint-brush" title="Color: LIGHTSKYBLUE"></i>
+        <li id="color:15" style="background-color:#1E90FF"><i class="fa fa-paint-brush" title="Color: DODGERBLUE"></i>
+        <li id="color:16" style="background-color:#ADD8E6"><i class="fa fa-paint-brush" title="Color: LIGHTBLUE"></i>
     </ul> 
     
     <ul style="bottom:40px;right:11px">
@@ -84,7 +84,7 @@ img {
 <script>
 (function() {
 
-var VERSION = "3.1";
+var VERSION = "3.2";
 
 // Init GUI Components
 var canvas = document.querySelector("canvas");
@@ -111,7 +111,7 @@ var Styles = {
 };
 var shape, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
 
-var HANDLE_RADIUS = 4;
+var HANDLE_RELATIVE_RADIUS = 0.17; // Vertex handle radius relative to grid spacing
 var handleIsSelected = false;
 var selectedHandleIndex = 0;
 
@@ -175,9 +175,6 @@ function formatCoordinate(coordinate){
     //   9.12  -> "9.12"
     //   9.123 -> "9.12"
     return Number(coordinate.toFixed(2)).toString();
-    // if (text.slice(-2) == '00'){
-    //     return text.split('.')[0];
-    // }
 }
 
 function drawPoints() {
@@ -322,6 +319,7 @@ Shape.prototype = {
             // For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
             var pointsString = window.location.search.substring(1);
             var color_index = null;
+            var pending_color = null;
             if (pointsString !== ""){
                 var pointArray = JSON.parse(pointsString);
                 if (pointArray.length % 2 === 0){
@@ -333,7 +331,16 @@ Shape.prototype = {
                             else{
                                 color_index = pointArray[i+1] - PEN_COLOR0;
                                 if(color_index >=0 && color_index < COLORS.length){
-                                    this.points[this.points.length-1].color = color_index;
+                                    if(i===0){
+                                        // If a color is specified as the very fist directive,
+                                        // then that color is applied to the next vertex (which
+                                        // will be the fist vertex in the data set).  Otherwise,
+                                        // color directives are applied to the previous vertex.
+                                        pending_color = color_index;
+                                    }
+                                    else{
+                                        this.points[this.points.length-1].color = color_index;
+                                    }
                                 } 
                             }
                         }
@@ -342,15 +349,14 @@ Shape.prototype = {
                                 x:pointArray[i],
                                 y:pointArray[i+1],
                                 visible:true,
-                                color:null
+                                color: pending_color ? pending_color : null
                             });
+                            pending_color = null;
                         }
                     }
-                    //TODO:Post process visibility
                     // Start in MOVE mode if starting with an existing dataset
                     currentTool = Tools.MOVE;
                 }
-                
             }
         }
     },
@@ -473,10 +479,10 @@ Shape.prototype = {
                 color = 'red';
             }
             else if (i == this.points.length - 1){
-                color = 'cyan';
+                color = 'blue';
             }
             else if (i == 0){
-                color = 'blue';
+                color = 'cyan';
             }
             else {
                 color = 'green';
@@ -485,7 +491,7 @@ Shape.prototype = {
             ctx.fillStyle = color;
             ctx.strokeStyle = color;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, 2 * Math.PI, false);
+            ctx.arc(p.x, p.y, HANDLE_RELATIVE_RADIUS * grid.size, 0, 2 * Math.PI, false);
             ctx.fill();
             ctx.stroke();
         }       
@@ -498,6 +504,7 @@ Shape.prototype = {
 var History = function(){
     this.clear();
 };
+
 History.prototype = {
     clear: function(){
         this.pointsHistory = [];
@@ -591,7 +598,6 @@ Grid.prototype = {
 
         this.ctx.save();
         this.ctx.strokeStyle = "#282828";
-        //this.ctx.strokeStyle = "#b00";
         this.ctx.fillStyle = "#000";
         this.ctx.fillRect(0, 0, this.width, this.height);
 
