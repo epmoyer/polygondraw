@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+<head> <meta charset="UTF-8">
     <title>PolygonDraw</title>
 
     <meta name="viewport" content="user-scalable=no" />
@@ -12,10 +11,14 @@
 
 <!-- GUI -->
 <canvas></canvas>
-<div>
-    <form>
-        <textarea name="coords" readonly></textarea>
-        <input type="range" name="zoom" min="5" max="40">
+<div class="wrapper">
+    <form method="post">
+      <div class="textarea-container">
+        <textarea name="coords"></textarea>
+        <textarea name="frames" class="invisible">sup</textarea>
+      </div>
+      <input type="range" id="speed" name="speed" min="100" max="1000" value="500">
+      <input type="range" id="zoom" name="zoom" min="2" max="40">
     </form>
     <ul style="top:10px;left:10px">
         <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i>
@@ -58,11 +61,16 @@
         <li id="color:14" style="background-color:#87CEFA"><i class="fa fa-paint-brush" title="Color: LIGHTSKYBLUE"></i>
         <li id="color:15" style="background-color:#1E90FF"><i class="fa fa-paint-brush" title="Color: DODGERBLUE"></i>
         <li id="color:16" style="background-color:#ADD8E6"><i class="fa fa-paint-brush" title="Color: LIGHTBLUE"></i>
-    </ul> 
-    
-    <ul style="bottom:40px;right:11px">
-        <li id="copy"><i class="fa fa-copy" title="Open polygon in new editor instance as URL"></i>
-        <li id="clipboard"><i class="fa fa-clipboard" title="Select array text"></i>
+    </ul>
+
+    <ul class="frame-controls" style="bottom:40px;right:11px">
+        <li id="add-button">+</li>
+        <li id="delete-button">-</li>
+        <li id="back-button">&lt;</li>
+        <li id="next-button">&gt;</li>
+        <li id="play-button">play</li>
+        <li id="stop-button">stop</li>
+        <li id="clipboard-button"><i class="fa fa-clipboard" title="Copy all frames to clipboard"></i>
     </ul>
 </div>
 
@@ -84,14 +92,15 @@ img {
 <script>
 (function() {
 
-var VERSION = "3.2";
+var VERSION = "3.3";
 
 // Init GUI Components
 var canvas = document.querySelector("canvas");
 var div = document.querySelector("div");
 var form = document.querySelector("form");
-var text = document.querySelector("textarea");
+var text = form.coords;
 var ctx = canvas.getContext("2d");
+var speed = form.speed;
 
 // Global vars
 var Tools = {
@@ -109,7 +118,7 @@ var Styles = {
     NORMALIZED: 2,
     ONE_NORMALIZED: 3
 };
-var shape, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
+var shapes, frame, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
 
 var HANDLE_RELATIVE_RADIUS = 0.17; // Vertex handle radius relative to grid spacing
 var handleIsSelected = false;
@@ -120,26 +129,27 @@ var PEN_UP = 7000;
 var PEN_COLOR0 = 8000;
 
 var COLORS = [
-    "#000000", // 00 (Penup)      
-    "#2020FF", // 01 BLUE         
-    "#FFFFFF", // 02 WHITE        
-    "#00FF00", // 03 GREEN        
-    "#FFFF00", // 04 YELLOW       
-    "#FF0000", // 05 RED          
-    "#00FFFF", // 06 CYAN         
-    "#FF00FF", // 07 MAGENTA      
-    "#008080", // 08 CYAN_DK          
-    "#E55300", // 09 ORANGE       
-    "#8B4513", // 10 BROWN        
-    "#808000", // 11 YELLOW_DK    
-    "#808080", // 12 GRAY         
-    "#404040", // 13 GRAY_DK      
-    "#87CEFA", // 14 LIGHTSKYBLUE 
-    "#1E90FF", // 15 DODGERBLUE   
-    "#ADD8E6", // 16 LIGHTBLUE    
+    "#000000", // 00 (Penup)
+    "#2020FF", // 01 BLUE
+    "#FFFFFF", // 02 WHITE
+    "#00FF00", // 03 GREEN
+    "#FFFF00", // 04 YELLOW
+    "#FF0000", // 05 RED
+    "#00FFFF", // 06 CYAN
+    "#FF00FF", // 07 MAGENTA
+    "#008080", // 08 CYAN_DK
+    "#E55300", // 09 ORANGE
+    "#8B4513", // 10 BROWN
+    "#808000", // 11 YELLOW_DK
+    "#808080", // 12 GRAY
+    "#404040", // 13 GRAY_DK
+    "#87CEFA", // 14 LIGHTSKYBLUE
+    "#1E90FF", // 15 DODGERBLUE
+    "#ADD8E6", // 16 LIGHTBLUE
 ];
 
 var current_selected_color = COLORS[1];
+var DELIMITER = ',';
 
 // Functions
 function windowResize() {
@@ -148,6 +158,42 @@ function windowResize() {
     div.setAttribute("style", "height:" + canvas.height + "px");
     grid.set(parseInt(form.zoom.value));
     redraw();
+}
+
+function getPointArray() {
+  var items = text.value.replace(/\s/g, '').split(DELIMITER);
+  var output = [];
+  for (var i = 0, length = items.length; i < length; i++) {
+    var item = items[i];
+    var number = parseInt(item, 10);
+    if (!isNaN(number)) output.push(number);
+  }
+  return output;
+}
+
+function getAllFrames() {
+  var frames = [];
+  for (var i = 0, length = shapes.length; i < length; i++) {
+    var shape = shapes[i];
+    frames.push(getFrameAtIndex(i));
+  }
+  if (frames.length === 1) frames = frames[0];
+  return frames;
+}
+
+function getFrameAtIndex(index) {
+  var shape = shapes[index];
+  var points = [];
+  for (var i = 0, len = shape.points.length; i < len; i++) {
+    var point = shape.points[i];
+    points.push(point.x);
+    points.push(point.y);
+  }
+  return points;
+}
+
+function currentShape() {
+  return shapes[frame];
 }
 
 //---------------------------------
@@ -178,13 +224,10 @@ function formatCoordinate(coordinate){
 }
 
 function drawPoints() {
-    if (shape.points.length === 0) {
-        text.value = "";
-        return;
-    }
     var i, point;
     var output_items = [];
     var color_items, point_items;
+    var shape = currentShape();
 
     for (i = 0; i < shape.points.length; i++) {
         point = shape.points[i];
@@ -215,11 +258,11 @@ function drawPoints() {
     for (i = 0; i < output_items.length; i++) {
         output_items[i] = output_items[i].toString();
     }
-    text.value = '[' + output_items.join(',') + ']';
 }
 
 function closestPoint(searchPoint) {
     // Returns null if there are 0 points in the shape
+    var shape = currentShape();
 
     var len = shape.points.length;
     var shortestDistance = 10000000000;
@@ -237,12 +280,12 @@ function closestPoint(searchPoint) {
 }
 
 function undo(){
-    shape.points = history.undo();
+    currentShape().points = history.undo();
     redraw();
 }
 
 function redo(){
-    shape.points = history.redo();
+    currentShape().points = history.redo();
     redraw();
 }
 
@@ -256,9 +299,9 @@ function redraw(){
     var y_pos = 15;
     var y_step = 15;
     grid.draw();
-    shape.draw(grid);
+    currentShape().draw(grid);
     drawPoints();
-    
+
     ctx.save();
     ctx.font="12px Helvetica";
 
@@ -303,62 +346,62 @@ function redraw(){
             break;
     }
     ctx.fillText(modeText, x_pos, y_pos);
+    ctx.fillStyle = "white";
+    y_pos += y_step;
+    var frameText = 'Frame ' + (frame + 1) + '/' + shapes.length;
+    if (interval) frameText += ' (ANIMATING)';
+    ctx.fillText(frameText, x_pos, y_pos);
     ctx.restore();
+    text.value = getFrameAtIndex(frame).join(',');
 }
 
 // DataObjs
-var Shape = function(parseUrl) {
-    this.reset(parseUrl);
+var Shape = function() {
+  this.reset();
 };
+
 Shape.prototype = {
-    reset: function(parseUrl) {
+    reset: function() {
         this.points = [];
 
-        if(parseUrl){
-            // Can supply initial point data in URL following "?".
-            // For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
-            var pointsString = window.location.search.substring(1);
-            var color_index = null;
-            var pending_color = null;
-            if (pointsString !== ""){
-                var pointArray = JSON.parse(pointsString);
-                if (pointArray.length % 2 === 0){
-                    for(var i=0,len=pointArray.length; i<len; i+=2){
-                        if(pointArray[i]==PEN_COMMAND){
-                            if(pointArray[i+1]==PEN_UP){
-                               this.points[this.points.length-1].visible = false; 
-                            }
-                            else{
-                                color_index = pointArray[i+1] - PEN_COLOR0;
-                                if(color_index >=0 && color_index < COLORS.length){
-                                    if(i===0){
-                                        // If a color is specified as the very fist directive,
-                                        // then that color is applied to the next vertex (which
-                                        // will be the fist vertex in the data set).  Otherwise,
-                                        // color directives are applied to the previous vertex.
-                                        pending_color = color_index;
-                                    }
-                                    else{
-                                        this.points[this.points.length-1].color = color_index;
-                                    }
-                                } 
-                            }
+        // Can supply initial point data in URL following "?".
+        // For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
+        var pointArray = getPointArray();
+        var color_index = null;
+        var pending_color = null;
+        for(var i=0,len=pointArray.length; i<len; i+=2){
+            if(pointArray[i]==PEN_COMMAND){
+                if(pointArray[i+1]==PEN_UP){
+                   this.points[this.points.length-1].visible = false;
+                }
+                else{
+                    color_index = pointArray[i+1] - PEN_COLOR0;
+                    if(color_index >=0 && color_index < COLORS.length){
+                        if(i===0){
+                            // If a color is specified as the very fist directive,
+                            // then that color is applied to the next vertex (which
+                            // will be the fist vertex in the data set).  Otherwise,
+                            // color directives are applied to the previous vertex.
+                            pending_color = color_index;
                         }
                         else{
-                            this.points.push({
-                                x:pointArray[i],
-                                y:pointArray[i+1],
-                                visible:true,
-                                color: pending_color ? pending_color : null
-                            });
-                            pending_color = null;
+                            this.points[this.points.length-1].color = color_index;
                         }
                     }
-                    // Start in MOVE mode if starting with an existing dataset
-                    currentTool = Tools.MOVE;
                 }
             }
+            else{
+                this.points.push({
+                    x:pointArray[i],
+                    y:pointArray[i+1],
+                    visible:true,
+                    color: pending_color ? pending_color : null
+                });
+                pending_color = null;
+            }
         }
+        // Start in MOVE mode if starting with an existing dataset
+        currentTool = Tools.MOVE;
     },
 
     addPointToEnd: function(position) {
@@ -376,14 +419,14 @@ Shape.prototype = {
             position
             );
     },
-    
+
     addPointAfterIndex: function(index, position){
-        shape.points.splice(
+        currentShape().points.splice(
             index + 1,
             0,
-            {   x:position.x, 
-                y:position.y, 
-                visible:true, 
+            {   x:position.x,
+                y:position.y,
+                visible:true,
                 color:null
             });
         this._optimize();
@@ -415,8 +458,9 @@ Shape.prototype = {
     _optimize: function() {
         // Optimize the color assignments.  Color only needs to be specified once, on
         // the first node that the color is drawn TO (not from)
-        var i, point, color;
+        var i, point, color, points;
         color = null;
+        points = [];
         for (i = 0; i < this.points.length; i++) {
             point = this.points[i];
             if ((color !== null) && (point.color == color)){
@@ -425,7 +469,12 @@ Shape.prototype = {
             if (point.color !== null){
                 color = point.color;
             }
+
+            points.push(point.x);
+            points.push(point.y);
         }
+
+        text.value = points.join(DELIMITER);
     },
 
     draw: function(grid_) {
@@ -494,7 +543,7 @@ Shape.prototype = {
             ctx.arc(p.x, p.y, HANDLE_RELATIVE_RADIUS * grid.size, 0, 2 * Math.PI, false);
             ctx.fill();
             ctx.stroke();
-        }       
+        }
         ctx.restore();
     },
 
@@ -659,15 +708,51 @@ Grid.prototype = {
 
 
 // Setup
-shape = new Shape(true);
+shapes = [new Shape()];
 grid = new Grid();
 history = new History();
+frame = 0;
 
 windowResize();
 redraw();
 
 window.onresize = windowResize;
 
+text.onchange = function() {
+  var points = text.value;
+  if (/\[/.test(points)) {
+    var parsed;
+    try {
+      parsed = JSON.parse(points);
+    } catch (error) {
+      alert(error);
+      return;
+    }
+    var frames;
+    if (typeof(parsed[0]) === 'object') {
+      frames = parsed;
+    } else {
+      frames = [parsed];
+    }
+
+    var currentFrame = frame;
+    form.coords.value = frames[0].join(',');
+    currentShape().reset();
+
+    for (var i = 1, length = frames.length; i < length; i++) {
+      frame += 1;
+      text.value = frames[i].join(',');
+      shapes.push(new Shape());
+    }
+    frame = currentFrame;
+
+  } else {
+    currentShape().reset();
+  }
+
+  history.clear();
+  redraw();
+};
 
 form.zoom.oninput = function() {
     // Responds during slide Firefox, Safari, Chrome
@@ -695,6 +780,7 @@ window.onmousedown = function(evt) {
 
     var click = grid.translate(x, y);
     var index, i, len;
+    var shape = currentShape();
     switch(currentTool){
         case Tools.LINE:
             shape.addPointToEnd(click);
@@ -774,6 +860,8 @@ window.onmousedown = function(evt) {
             break;
     }
 
+
+    text.blur();
     redraw();
 };
 
@@ -789,6 +877,7 @@ window.onmousemove = function(evt) {
 
     mousePos = grid.translate(x, y);
     redraw();
+    var shape = currentShape();
 
     if (currentTool === Tools.LINE && shape.points.length > 0) {
         var c = grid.toPoint(shape.getLastPoint());
@@ -839,18 +928,12 @@ for(color_index = 1; color_index<=16; color_index++){
     })(color_index);
 }
 
-document.getElementById("clipboard").onclick = function() {
-    text.focus();
-    text.select();
-};
-document.getElementById("copy").onclick = function() {
-    var url = window.location.href.split("?")[0] + "?" + text.value;
-    window.open(url);
-};
 document.getElementById("refresh").onclick = function() {
-    if(confirm("Clear all polygon points and start over? This operation cannot be undone.")){
+    if(confirm("Clear all frames and polygon points and start over? This operation cannot be undone.")){
         switchTool(Tools.LINE);
-        shape = new Shape(false);
+        text.value = '';
+        shapes = [new Shape()];
+        frame = 0;
         history.clear();
         redraw();
     }
@@ -862,8 +945,79 @@ document.getElementById("redo").onclick = function() {
     redo();
 };
 
+document.getElementById("back-button").onclick = function() {
+  stopAnimation();
+  if (frame === 0) return;
+  frame -= 1;
+  history.clear();
+  redraw();
+};
+
+document.getElementById("next-button").onclick = function() {
+  stopAnimation();
+  if (frame === shapes.length - 1) return;
+  frame += 1;
+  history.clear();
+  redraw();
+};
+
+document.getElementById("add-button").onclick = function() {
+  stopAnimation();
+  frame += 1;
+  shapes.splice(frame, 0, new Shape());
+  history.clear();
+  redraw();
+};
+
+document.getElementById("delete-button").onclick = function() {
+  stopAnimation();
+  if (frame === 0) return;
+  shapes.splice(frame, 1);
+  if (frame > shapes.length - 1) frame -= 1;
+  history.clear();
+  redraw();
+};
+
+document.getElementById("clipboard-button").onclick = function() {
+  var frames = getAllFrames();
+  form.frames.value = JSON.stringify(frames);
+  form.frames.select();
+  if (document.execCommand('copy')) {
+    alert('copied ' + shapes.length + ' frames to clipboard!')
+  }
+};
+
+var interval;
+var currentSpeed;
+var animate = function() {
+  if (interval || shapes.length <= 1) return;
+  currentSpeed = 1000 - (parseInt(speed.value) || 0);
+  interval = setInterval(function() {
+    frame += 1;
+    if (frame >= shapes.length) frame = 0;
+    redraw();
+  }, currentSpeed);
+}
+var stopAnimation = function() {
+  if (typeof(interval) !== undefined) clearInterval(interval);
+  interval = undefined;
+  redraw();
+}
+var restartAnimation = function() {
+  if (!interval || currentSpeed === (parseInt(speed.value, 10) || 0)) return;
+  stopAnimation();
+  animate();
+}
+
+document.getElementById("play-button").onclick = animate;
+document.getElementById("stop-button").onclick = stopAnimation;
+
+speed.onchange = restartAnimation;
+speed.oninput  = restartAnimation;
+
 // Keyboard handler
 document.addEventListener("keydown", function(evt) {
+    if (evt.metaKey) return;
     switch(evt.keyCode){
         case 77: // "M"
         case 27: // <escape>

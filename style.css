@@ -1,26 +1,10 @@
-*{    
+*{
     padding:0;
     margin:0
 }
 
-input:focus,textarea:focus{
+input:focus,textarea:focus,button{
     outline:0
-}
-
-input[type=range]{
-    -webkit-appearance:none;
-    background-color:#ccc;
-    height:2px;
-    margin:5px 0
-}
-
-input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    border-radius:6px;
-    border:1px solid #ccc;
-    background-color:#fff;
-    width:12px;
-    height:12px
 }
 
 canvas{
@@ -33,7 +17,7 @@ canvas{
     border:1px solid #ccc;
 }
 
-div{
+.wrapper {
     display:block;
     position:absolute;
     right:5px;
@@ -81,22 +65,75 @@ ul li:last-child{
     border-bottom-right-radius:4px
 }
 
-input,textarea{
+input,.textarea-container{
     position:absolute;
     bottom:10px;
     right:10px;
     width:320px;
     max-width:320px;
-    border:1px solid #ccc;
-    box-sizing:border-box;
-    -moz-box-sizing:border-box
 }
 
-textarea{
-    resize:none;
+.textarea-container {
     top:150px;
     padding:10px;
-    bottom:75px}
+    width: 300px;
+    bottom:80px;
+    left: 2px;
+}
+
+input#speed {
+  bottom: 45px;
+  width: 65px;
+  left: 11px;
+}
+
+input#zoom {
+  bottom: 10px;
+}
+
+.invisible {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+}
+
+.frame-controls {
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.frame-controls, li, .textarea-container{
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -o-user-select: none;
+}
+
+input[type=range]{
+    -webkit-appearance:none;
+    background-color:#ccc;
+    height:2px;
+    margin:5px 0
+}
+
+input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    border-radius:6px;
+    border:1px solid #ccc;
+    background-color:#fff;
+    width:12px;
+    height:12px
+}
+
+textarea {
+    resize:none;
+    border:1px solid #ccc;
+    box-sizing:border-box;
+    -moz-box-sizing:border-box;
+    height: 100%;
+    width: 100%;
+}
 
 textarea:focus{
     outline:0
