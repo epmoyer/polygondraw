@@ -4,7 +4,7 @@
     <title>PolygonDraw</title>
 
     <meta name="viewport" content="user-scalable=no" />
-    <link href="https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.css" rel="stylesheet">
+   <link href="https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,20 +22,20 @@
       <input type="range" id="grid" name="grid" min="1" max="10" value="1">
     </form>
     <ul style="top:10px;left:10px">
-        <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i>
-        <li id="pencil"><i class="fa fa-pencil" title="L: Line"></i>
-        <li id="plus"><i class="fa fa-plus" title="A: Add"></i>
-        <li id="scissors"><i class="fa fa-scissors" title="C: Cut"></i>
-        <li id="crosshairs"><i class="fa fa-crosshairs" title="O: Change Origin"></i>
-        <li id="eye-slash"><i class="fa fa-eye-slash" title="V: Toggle Visibility"></i>
-        <li id="anchor"><i class="fa fa-anchor" title="S: Toggle Grid Snap"></i>
-        </li>
+      <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i></li>
+      <li id="pencil"><i class="fa fa-pencil" title="L: Line"></i></li>
+      <li id="plus"><i class="fa fa-plus" title="A: Add"></i></li>
+      <li id="scissors"><i class="fa fa-scissors" title="C: Cut"></i></li>
+      <li id="crosshairs"><i class="fa fa-crosshairs" title="O: Change Origin"></i></li>
+      <li id="eye-slash"><i class="fa fa-eye-slash" title="V: Toggle Visibility"></i></li>
+      <li id="anchor"><i class="fa fa-anchor" title="S: Toggle Grid Snap"></i></li>
     </ul>
 
     <ul style="top:45px;left:10px;">
-        <li id="undo"><i class="fa fa-undo" title="U: Undo"></i>
-        <li id="redo"><i class="fa fa-repeat" title="R: Redo"></i>
-        <li id="refresh"><i class="fa fa-trash-o" title="Delete All"></i></li>
+      <li id="undo"><i class="fa fa-undo" title="U: Undo"></i></li>
+      <li id="redo"><i class="fa fa-repeat" title="R: Redo"></i></li>
+      <li id="refresh"><i class="fa fa-trash-o" title="Delete All"></i></li>
+      <li id="hand"><i class="fa fa-hand-paper-o" title="H: Hand"></i></li>
     </ul>
 
     <!-- <ol style="bottom:89px;left:10px;">
@@ -93,7 +93,7 @@ img {
 <script>
 (function() {
 
-var VERSION = "3.3";
+var VERSION = "3.4";
 
 // Init GUI Components
 var canvas = document.querySelector("canvas");
@@ -112,7 +112,8 @@ var Tools = {
     CUT: 3,
     ORIGIN: 4,
     VISIBILITY: 5,
-    COLORIZE: 6
+    COLORIZE: 6,
+    HAND: 7,
 };
 var Styles = {
     ARRAY: 0,
@@ -347,6 +348,9 @@ function redraw(){
         case Tools.COLORIZE:
             modeText = "Colorize";
             break;
+        case Tools.HAND:
+            modeText = "Hand";
+            break;
     }
     ctx.fillText(modeText, x_pos, y_pos);
     ctx.fillStyle = "white";
@@ -356,6 +360,12 @@ function redraw(){
     ctx.fillText(frameText, x_pos, y_pos);
     ctx.restore();
     text.value = getFrameAtIndex(frame).join(',');
+    y_pos += y_step;
+    ctx.fillStyle = "white";
+    ctx.fillText('GRID LEVEL: ' + gridDivision.value, x_pos, y_pos);
+    y_pos += y_step;
+    ctx.fillStyle = "white";
+    ctx.fillText('PAN: (' + Math.floor(panX) + ', ' + Math.floor(panY) + ')', x_pos, y_pos);
 }
 
 // DataObjs
@@ -631,8 +641,8 @@ Grid.prototype = {
         this.y = Math.round((canvas.height - this.height)/2);
 
         this.origo = {
-            x: Math.round(this.width/(this.size*2)),
-            y: Math.round(this.height/(this.size*2))
+            x: Math.round(this.width/(this.size*2)) + panX,
+            y: Math.round(this.height/(this.size*2)) + panY,
         };
 
         this.canvas.width = this.width;
@@ -713,6 +723,15 @@ Grid.prototype = {
 // Setup
 var gridFraction = 1 / parseInt(gridDivision.value);
 var lastGridFraction = 1;
+var drag = {
+  active: false,
+  x: 0,
+  y: 0,
+  panX: 0,
+  panY: 0,
+};
+var panX = 0;
+var panY = 0;
 
 shapes = [new Shape()];
 grid = new Grid();
@@ -776,6 +795,10 @@ form.zoom.onchange = function() {
     redraw();
 };
 
+window.onmouseup = function(evt) {
+  drag.active = false;
+};
+
 window.onmousedown = function(evt) {
     var x = evt.x - 5;
     var y = evt.y - 5;
@@ -790,6 +813,15 @@ window.onmousedown = function(evt) {
     var index, i, len;
     var shape = currentShape();
     switch(currentTool){
+        case Tools.HAND:
+            if (!drag.active) {
+                drag.x = x;
+                drag.y = y;
+                drag.panX = panX;
+                drag.panY = panY;
+                drag.active = true;
+            }
+            break;
         case Tools.LINE:
             shape.addPointToEnd(click);
             history.commit(shape.points);
@@ -896,10 +928,16 @@ window.onmousemove = function(evt) {
         ctx.moveTo(c.x, c.y);
         ctx.lineTo(x, y);
         ctx.stroke();
-    }
-    else if (currentTool === Tools.MOVE && handleIsSelected) {
+    } else if (currentTool === Tools.MOVE && handleIsSelected) {
         shape.points[selectedHandleIndex].x = mousePos.x;
         shape.points[selectedHandleIndex].y = mousePos.y;
+    } else if (currentTool === Tools.HAND && drag.active) {
+      var zoomValue = parseInt(form.zoom.value);
+      var amount = 1 / zoomValue;
+      panX = drag.panX + Math.floor((x - drag.x) * amount);
+      panY = drag.panY + Math.floor((y - drag.y) * amount);
+      grid.set(parseInt(zoomValue));
+      redraw();
     }
 };
 
@@ -924,6 +962,20 @@ document.getElementById("eye-slash").onclick = function() {
 };
 document.getElementById("anchor").onclick = function() {
     snap_enabled = !snap_enabled;
+    redraw();
+};
+document.getElementById("hand").onclick = function() {
+    switchTool(Tools.HAND);
+};
+document.getElementById("hand").ondblclick = function() {
+    panX = 0;
+    panY = 0;
+    drag.x = 0;
+    drag.y = 0;
+    drag.panX = 0;
+    drag.panY = 0;
+    drag.active = false;
+    grid.set(parseInt(form.zoom.value));
     redraw();
 };
 var color_index;
@@ -1036,7 +1088,7 @@ var updateGridFraction = function() {
     currentShape().reset();
   }
   frame = currentFrame;
-  text.value = frames[frame].join(',');
+  text.value = (frames[frame] || []).join(',');
   currentShape().reset();
   lastGridFraction = gridFraction;
   redraw();
