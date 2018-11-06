@@ -19,7 +19,7 @@
       </div>
       <input type="range" id="speed" name="speed" min="100" max="1000" value="500">
       <input type="range" id="zoom" name="zoom" min="2" max="40">
-      <input type="range" id="grid" name="grid" min="1" max="10" value="1">
+      <input type="range" id="grid" name="grid" min="1" max="5" value="1">
     </form>
     <ul style="top:10px;left:10px">
       <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i></li>
@@ -630,7 +630,7 @@ var Grid = function() {
 };
 Grid.prototype = {
     set: function(size) {
-        this.size = size * gridFraction;
+        this.size = Math.round(size * gridFraction);
 
         var wt = Math.ceil(canvas.width / size);
         var ht = Math.ceil(canvas.height / size);
@@ -1078,17 +1078,21 @@ var updateGridFraction = function() {
   gridDivisionValue = parseInt(gridDivision.value);
   gridFraction = 1 / gridDivisionValue;
   grid.set(parseInt(form.zoom.value));
-  var currentFrame = frame;
   var modifier = gridDivisionValue * lastGridFraction;
   var frames = getAllFrames({ modifier : modifier });
-  for (var i = 0, length = frames.length; i < length; i++) {
-    if (i === currentFrame) continue;
-    text.value = frames[i].join(',');
-    frame = i;
-    currentShape().reset();
+  if (shapes.length > 1) {
+    var currentFrame = frame;
+    for (var i = 0, length = frames.length; i < length; i++) {
+      if (i === currentFrame) continue;
+      text.value = frames[i].join(',');
+      frame = i;
+      currentShape().reset();
+    }
+    frame = currentFrame;
+    text.value = (frames[frame] || []).join(',');
+  } else {
+    text.value = frames.join(',');
   }
-  frame = currentFrame;
-  text.value = (frames[frame] || []).join(',');
   currentShape().reset();
   lastGridFraction = gridFraction;
   redraw();
