@@ -933,7 +933,8 @@ window.onmousemove = function(evt) {
         shape.points[selectedHandleIndex].y = mousePos.y;
     } else if (currentTool === Tools.HAND && drag.active) {
       var zoomValue = parseInt(form.zoom.value);
-      var amount = 1 / zoomValue;
+      var gridDivisionValue = parseInt(form.grid.value);
+      var amount = 1 / zoomValue * gridDivisionValue;
       panX = drag.panX + Math.floor((x - drag.x) * amount);
       panY = drag.panY + Math.floor((y - drag.y) * amount);
       grid.set(parseInt(zoomValue));
@@ -1075,6 +1076,7 @@ var restartAnimation = function() {
 };
 
 var updateGridFraction = function() {
+  var tool = currentTool;
   gridDivisionValue = parseInt(gridDivision.value);
   gridFraction = 1 / gridDivisionValue;
   grid.set(parseInt(form.zoom.value));
@@ -1095,7 +1097,7 @@ var updateGridFraction = function() {
   }
   currentShape().reset();
   lastGridFraction = gridFraction;
-  redraw();
+  switchTool(tool);
 };
 
 document.getElementById("play-button").onclick = animate;
@@ -1117,6 +1119,9 @@ document.addEventListener("keydown", function(evt) {
             break;
         case 76: // "L"
             switchTool(Tools.LINE);
+            break;
+        case 72: // "H"
+            switchTool(Tools.HAND);
             break;
         case 65: // "A"
             switchTool(Tools.ADD);
