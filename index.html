@@ -19,6 +19,7 @@
       </div>
       <input type="range" id="speed" name="speed" min="100" max="1000" value="500">
       <input type="range" id="zoom" name="zoom" min="2" max="40">
+      <input type="range" id="grid" name="grid" min="1" max="10" value="1">
     </form>
     <ul style="top:10px;left:10px">
         <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i>
@@ -101,6 +102,7 @@ var form = document.querySelector("form");
 var text = form.coords;
 var ctx = canvas.getContext("2d");
 var speed = form.speed;
+var gridDivision = form.grid;
 
 // Global vars
 var Tools = {
@@ -171,23 +173,24 @@ function getPointArray() {
   return output;
 }
 
-function getAllFrames() {
+function getAllFrames(options) {
   var frames = [];
   for (var i = 0, length = shapes.length; i < length; i++) {
     var shape = shapes[i];
-    frames.push(getFrameAtIndex(i));
+    frames.push(getFrameAtIndex(i, options));
   }
   if (frames.length === 1) frames = frames[0];
   return frames;
 }
 
-function getFrameAtIndex(index) {
+function getFrameAtIndex(index, options) {
+  var modifier = (options || {}).modifier || 1;
   var shape = shapes[index];
   var points = [];
   for (var i = 0, len = shape.points.length; i < len; i++) {
     var point = shape.points[i];
-    points.push(point.x);
-    points.push(point.y);
+    points.push(point.x * modifier);
+    points.push(point.y * modifier);
   }
   return points;
 }
@@ -617,7 +620,7 @@ var Grid = function() {
 };
 Grid.prototype = {
     set: function(size) {
-        this.size = size;
+        this.size = size * gridFraction;
 
         var wt = Math.ceil(canvas.width / size);
         var ht = Math.ceil(canvas.height / size);
@@ -708,6 +711,9 @@ Grid.prototype = {
 
 
 // Setup
+var gridFraction = 1 / parseInt(gridDivision.value);
+var lastGridFraction = 1;
+
 shapes = [new Shape()];
 grid = new Grid();
 history = new History();
@@ -718,7 +724,7 @@ redraw();
 
 window.onresize = windowResize;
 
-text.onchange = function() {
+var pointsOnChange = function() {
   var points = text.value;
   if (/\[/.test(points)) {
     var parsed;
@@ -736,7 +742,7 @@ text.onchange = function() {
     }
 
     var currentFrame = frame;
-    form.coords.value = frames[0].join(',');
+    text.value = frames[0].join(',');
     currentShape().reset();
 
     for (var i = 1, length = frames.length; i < length; i++) {
@@ -753,6 +759,8 @@ text.onchange = function() {
   history.clear();
   redraw();
 };
+
+text.onchange = pointsOnChange;
 
 form.zoom.oninput = function() {
     // Responds during slide Firefox, Safari, Chrome
@@ -979,12 +987,17 @@ document.getElementById("delete-button").onclick = function() {
 };
 
 document.getElementById("clipboard-button").onclick = function() {
+  var currentGridDivisionValue = gridDivision.value;
+  gridDivision.value = 1;
+  gridDivision.onchange();
   var frames = getAllFrames();
   form.frames.value = JSON.stringify(frames);
   form.frames.select();
   if (document.execCommand('copy')) {
     alert('copied ' + shapes.length + ' frames to clipboard!')
   }
+  gridDivision.value = currentGridDivisionValue;
+  gridDivision.onchange();
 };
 
 var interval;
@@ -997,23 +1010,46 @@ var animate = function() {
     if (frame >= shapes.length) frame = 0;
     redraw();
   }, currentSpeed);
-}
+};
 var stopAnimation = function() {
   if (typeof(interval) !== undefined) clearInterval(interval);
   interval = undefined;
   redraw();
-}
+};
 var restartAnimation = function() {
   if (!interval || currentSpeed === (parseInt(speed.value, 10) || 0)) return;
   stopAnimation();
   animate();
-}
+};
+
+var updateGridFraction = function() {
+  gridDivisionValue = parseInt(gridDivision.value);
+  gridFraction = 1 / gridDivisionValue;
+  grid.set(parseInt(form.zoom.value));
+  var currentFrame = frame;
+  var modifier = gridDivisionValue * lastGridFraction;
+  var frames = getAllFrames({ modifier : modifier });
+  for (var i = 0, length = frames.length; i < length; i++) {
+    if (i === currentFrame) continue;
+    text.value = frames[i].join(',');
+    frame = i;
+    currentShape().reset();
+  }
+  frame = currentFrame;
+  text.value = frames[frame].join(',');
+  currentShape().reset();
+  lastGridFraction = gridFraction;
+  redraw();
+};
 
 document.getElementById("play-button").onclick = animate;
 document.getElementById("stop-button").onclick = stopAnimation;
 
 speed.onchange = restartAnimation;
 speed.oninput  = restartAnimation;
+
+gridDivision.onchange = updateGridFraction;
+gridDivision.oninput  = updateGridFraction;
 
 // Keyboard handler
 document.addEventListener("keydown", function(evt) {
