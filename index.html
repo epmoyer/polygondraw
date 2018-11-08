@@ -18,8 +18,8 @@
         <textarea name="frames" class="invisible">sup</textarea>
       </div>
       <input type="range" id="speed" name="speed" min="100" max="1000" value="500">
-      <input type="range" id="zoom" name="zoom" min="2" max="40">
-      <input type="range" id="grid" name="grid" min="1" max="5" value="1">
+      <input type="range" id="zoom" name="zoom" min="2" max="200" value="20">
+      <input type="range" id="grid" name="grid" min="1" max="4" value="1">
     </form>
     <ul style="top:10px;left:10px">
       <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i></li>
@@ -122,9 +122,9 @@ var Styles = {
     ONE_NORMALIZED: 3
 };
 var shapes, frame, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
+var lastMovedPoint;
 
 var HANDLE_RELATIVE_RADIUS = 0.17; // Vertex handle radius relative to grid spacing
-var handleIsSelected = false;
 var selectedHandleIndex = 0;
 
 var PEN_COMMAND = 9000;
@@ -537,7 +537,7 @@ Shape.prototype = {
 
         // Draw vertex handles
         for (i = 0; i < this.points.length; i++) {
-            if (handleIsSelected && i===selectedHandleIndex){
+            if (i===selectedHandleIndex){
                 color = 'red';
             }
             else if (i == this.points.length - 1){
@@ -732,6 +732,7 @@ var drag = {
 };
 var panX = 0;
 var panY = 0;
+var mouseIsDown = false;
 
 shapes = [new Shape()];
 grid = new Grid();
@@ -743,7 +744,7 @@ redraw();
 
 window.onresize = windowResize;
 
-var pointsOnChange = function() {
+text.onchange = function() {
   var points = text.value;
   if (/\[/.test(points)) {
     var parsed;
@@ -776,10 +777,9 @@ var pointsOnChange = function() {
   }
 
   history.clear();
+  history.commit(currentShape().points);
   redraw();
 };
-
-text.onchange = pointsOnChange;
 
 form.zoom.oninput = function() {
     // Responds during slide Firefox, Safari, Chrome
@@ -797,6 +797,15 @@ form.zoom.onchange = function() {
 
 window.onmouseup = function(evt) {
   drag.active = false;
+  mouseIsDown = false;
+  var shape = currentShape();
+  if (currentTool === Tools.MOVE && lastMovedPoint) {
+    var point = shape.points[selectedHandleIndex];
+    if (lastMovedPoint.x !== point.x || lastMovedPoint.y !== point.y) {
+      history.commit(shape.points);
+    }
+  }
+  selectedHandleIndex = null;
 };
 
 window.onmousedown = function(evt) {
@@ -812,6 +821,7 @@ window.onmousedown = function(evt) {
     var click = grid.translate(x, y);
     var index, i, len;
     var shape = currentShape();
+    mouseIsDown = true;
     switch(currentTool){
         case Tools.HAND:
             if (!drag.active) {
@@ -828,17 +838,10 @@ window.onmousedown = function(evt) {
             break;
 
         case Tools.MOVE:
-            if (handleIsSelected){
-                handleIsSelected = false;
-                history.commit(shape.points);
-            }
-            else{
-                index = closestPoint(click);
-                if(index !== null){
-                    handleIsSelected = true;
-                    selectedHandleIndex = index;
-                }
-            }
+            selectedHandleIndex = closestPoint(click);
+            var point = shape.points[selectedHandleIndex];
+            lastMovedPoint = { x: point.x, y: point.y };
+        console.log(lastMovedPoint);
             break;
 
         case Tools.ADD:
@@ -928,7 +931,7 @@ window.onmousemove = function(evt) {
         ctx.moveTo(c.x, c.y);
         ctx.lineTo(x, y);
         ctx.stroke();
-    } else if (currentTool === Tools.MOVE && handleIsSelected) {
+    } else if (currentTool === Tools.MOVE && mouseIsDown && selectedHandleIndex !== null) {
         shape.points[selectedHandleIndex].x = mousePos.x;
         shape.points[selectedHandleIndex].y = mousePos.y;
     } else if (currentTool === Tools.HAND && drag.active) {

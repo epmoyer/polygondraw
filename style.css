@@ -116,9 +116,9 @@ input#grid  {
 
 input[type=range]{
     -webkit-appearance:none;
-    background-color:#ccc;
+    background-color:#000;
     height:2px;
-    margin:5px 0
+    margin:5px 0;
 }
 
 input[type=range]::-webkit-slider-thumb{
