@@ -284,12 +284,12 @@ function closestPoint(searchPoint) {
 }
 
 function undo(){
-    currentShape().points = history.undo();
+    currentShape().points = history[frame].undo();
     redraw();
 }
 
 function redo(){
-    currentShape().points = history.redo();
+    currentShape().points = history[frame].redo();
     redraw();
 }
 
@@ -573,6 +573,14 @@ History.prototype = {
         this.tail = -1;
     },
 
+    copy: function(history){
+      this.tail = history.tail;
+      this.pointsHistory = [];
+      for (var i = 0, length = history.pointsHistory.length; i < length; i++) {
+        this.pointsHistory.push(history.pointsHistory[i]);
+      }
+    },
+
     commit: function(points){
         // Remove any history after the current tail
         var splice_index = this.tail + 1;
@@ -736,7 +744,7 @@ var mouseIsDown = false;
 
 shapes = [new Shape()];
 grid = new Grid();
-history = new History();
+history = [new History()];
 frame = 0;
 
 windowResize();
@@ -776,8 +784,8 @@ text.onchange = function() {
     currentShape().reset();
   }
 
-  history.clear();
-  history.commit(currentShape().points);
+  history[frame].clear();
+  history[frame].commit(currentShape().points);
   redraw();
 };
 
@@ -802,7 +810,7 @@ window.onmouseup = function(evt) {
   if (currentTool === Tools.MOVE && lastMovedPoint) {
     var point = shape.points[selectedHandleIndex];
     if (lastMovedPoint.x !== point.x || lastMovedPoint.y !== point.y) {
-      history.commit(shape.points);
+      history[frame].commit(shape.points);
     }
   }
   selectedHandleIndex = null;
@@ -834,7 +842,7 @@ window.onmousedown = function(evt) {
             break;
         case Tools.LINE:
             shape.addPointToEnd(click);
-            history.commit(shape.points);
+            history[frame].commit(shape.points);
             break;
 
         case Tools.MOVE:
@@ -859,14 +867,14 @@ window.onmousedown = function(evt) {
                 }
                 // Add the new point
                 shape.addPointAfterIndex(matchIndex, click);
-                history.commit(shape.points);
+                history[frame].commit(shape.points);
             }
             break;
 
         case Tools.CUT:
             index = closestPoint(click);
             shape.deletePoint(index);
-            history.commit(shape.points);
+            history[frame].commit(shape.points);
             break;
 
         case Tools.ORIGIN:
@@ -875,7 +883,7 @@ window.onmousedown = function(evt) {
                 shape.points[i].x -= click.x;
                 shape.points[i].y -= click.y;
             }
-            history.commit(shape.points);
+            history[frame].commit(shape.points);
             break;
         case Tools.VISIBILITY:
             // Toggle visibility of closest point
@@ -891,14 +899,14 @@ window.onmousedown = function(evt) {
                     shape.points[index].visible = !shape.points[index].visible;
                 }
             }
-            history.commit(shape.points);
+            history[frame].commit(shape.points);
             break;
         case Tools.COLORIZE:
             // Toggle visibility of closest point
             index = closestPoint(click);
             if(index !== null){
                 shape.colorizePoint(index, current_selected_color);
-                history.commit(shape.points);
+                history[frame].commit(shape.points);
             }
             break;
     }
@@ -998,7 +1006,7 @@ document.getElementById("refresh").onclick = function() {
         text.value = '';
         shapes = [new Shape()];
         frame = 0;
-        history.clear();
+        history[frame].clear();
         redraw();
     }
 };
@@ -1013,7 +1021,6 @@ document.getElementById("back-button").onclick = function() {
   stopAnimation();
   if (frame === 0) return;
   frame -= 1;
-  history.clear();
   redraw();
 };
 
@@ -1021,15 +1028,17 @@ document.getElementById("next-button").onclick = function() {
   stopAnimation();
   if (frame === shapes.length - 1) return;
   frame += 1;
-  history.clear();
   redraw();
 };
 
 document.getElementById("add-button").onclick = function() {
   stopAnimation();
+  var previousHistory = history[frame];
   frame += 1;
   shapes.splice(frame, 0, new Shape());
-  history.clear();
+  var newHistory = new History();
+  newHistory.copy(previousHistory);
+  history.splice(frame, 0, newHistory);
   redraw();
 };
 
@@ -1037,8 +1046,8 @@ document.getElementById("delete-button").onclick = function() {
   stopAnimation();
   if (frame === 0) return;
   shapes.splice(frame, 1);
+  history.splice(frame, 1);
   if (frame > shapes.length - 1) frame -= 1;
-  history.clear();
   redraw();
 };
 
