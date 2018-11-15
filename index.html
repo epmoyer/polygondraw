@@ -64,6 +64,11 @@
         <li id="color:16" style="background-color:#ADD8E6"><i class="fa fa-paint-brush" title="Color: LIGHTBLUE"></i>
     </ul>
 
+    <div class="visibility-controls" style="bottom:50px;right:11px">
+        <input type="checkbox" id="prev-frame-visible" title="reveal previous frame" />
+        <input type="checkbox" id="next-frame-visible" title="reveal next frame" />
+    </div>
+
     <ul class="frame-controls" style="bottom:40px;right:11px">
         <li id="add-button">+</li>
         <li id="delete-button">-</li>
@@ -303,6 +308,14 @@ function redraw(){
     var y_pos = 15;
     var y_step = 15;
     grid.draw();
+    var previousFrame = shapes[frame - 1];
+    var nextFrame = shapes[frame + 1];
+    if (previousFrameVisible && previousFrame) {
+      previousFrame.draw(grid, '#aa6666');
+    }
+    if (nextFrameVisible && nextFrame) {
+      nextFrame.draw(grid, '#6666aa');
+    }
     currentShape().draw(grid);
     drawPoints();
 
@@ -490,18 +503,22 @@ Shape.prototype = {
         text.value = points.join(DELIMITER);
     },
 
-    draw: function(grid_) {
+    draw: function(grid_, faintColor) {
         var i, p, color;
 
         ctx.save();
 
         // Draw lines
         if(this.points.length >= 2){
-            if(this.points[0].color){
-                line_color = COLORS[this.points[0].color];
-            }
-            else{
-                line_color = 'white';
+            if (faintColor) {
+              line_color = faintColor;
+            } else {
+              if(this.points[0].color){
+                  line_color = COLORS[this.points[0].color];
+              }
+              else{
+                  line_color = 'white';
+              }
             }
             ctx.strokeStyle = line_color;
             ctx.lineWidth=2;
@@ -741,6 +758,8 @@ var drag = {
 var panX = 0;
 var panY = 0;
 var mouseIsDown = false;
+var previousFrameVisible = false;
+var nextFrameVisible = false;
 
 shapes = [new Shape()];
 grid = new Grid();
@@ -1015,6 +1034,16 @@ document.getElementById("undo").onclick = function() {
 };
 document.getElementById("redo").onclick = function() {
     redo();
+};
+
+document.getElementById("prev-frame-visible").onclick = function() {
+  previousFrameVisible = !previousFrameVisible;
+  redraw();
+};
+
+document.getElementById("next-frame-visible").onclick = function() {
+  nextFrameVisible = !nextFrameVisible;
+  redraw();
 };
 
 document.getElementById("back-button").onclick = function() {
