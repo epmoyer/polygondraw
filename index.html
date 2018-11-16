@@ -792,7 +792,6 @@ text.onchange = function() {
       frames = [parsed];
     }
 
-    debugger;
     var currentFrame = frame;
     text.value = frames[0].join(DELIMITER);
     currentShape().reset();
@@ -801,6 +800,7 @@ text.onchange = function() {
       frame += 1;
       text.value = frames[i].join(DELIMITER);
       shapes.push(new Shape());
+      history.push(new History());
     }
     frame = currentFrame;
 
