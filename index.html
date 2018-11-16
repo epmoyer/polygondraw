@@ -173,7 +173,7 @@ function getPointArray() {
   var output = [];
   for (var i = 0, length = items.length; i < length; i++) {
     var item = items[i];
-    var number = parseInt(item, 10);
+    var number = parseFloat(item, 10);
     if (!isNaN(number)) output.push(number);
   }
   return output;
