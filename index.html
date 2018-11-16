@@ -800,7 +800,10 @@ text.onchange = function() {
       frame += 1;
       text.value = frames[i].join(DELIMITER);
       shapes.push(new Shape());
-      history.push(new History());
+      var newHistory = new History();
+      newHistory.clear();
+      newHistory.commit(currentShape().points);
+      history.push(newHistory);
     }
     frame = currentFrame;
 
