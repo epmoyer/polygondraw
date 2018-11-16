@@ -197,6 +197,10 @@ function getFrameAtIndex(index, options) {
     var point = shape.points[i];
     points.push(point.x * modifier);
     points.push(point.y * modifier);
+    if (point.visible === false) {
+      points.push(PEN_COMMAND);
+      points.push(PEN_UP);
+    }
   }
   return points;
 }
@@ -372,7 +376,7 @@ function redraw(){
     if (interval) frameText += ' (ANIMATING)';
     ctx.fillText(frameText, x_pos, y_pos);
     ctx.restore();
-    text.value = getFrameAtIndex(frame).join(',');
+    text.value = getFrameAtIndex(frame).join(DELIMITER);
     y_pos += y_step;
     ctx.fillStyle = "white";
     ctx.fillText('GRID LEVEL: ' + gridDivision.value, x_pos, y_pos);
@@ -788,13 +792,14 @@ text.onchange = function() {
       frames = [parsed];
     }
 
+    debugger;
     var currentFrame = frame;
-    text.value = frames[0].join(',');
+    text.value = frames[0].join(DELIMITER);
     currentShape().reset();
 
     for (var i = 1, length = frames.length; i < length; i++) {
       frame += 1;
-      text.value = frames[i].join(',');
+      text.value = frames[i].join(DELIMITER);
       shapes.push(new Shape());
     }
     frame = currentFrame;
@@ -1127,14 +1132,14 @@ var updateGridFraction = function() {
     var currentFrame = frame;
     for (var i = 0, length = frames.length; i < length; i++) {
       if (i === currentFrame) continue;
-      text.value = frames[i].join(',');
+      text.value = frames[i].join(DELIMITER);
       frame = i;
       currentShape().reset();
     }
     frame = currentFrame;
-    text.value = (frames[frame] || []).join(',');
+    text.value = (frames[frame] || []).join(DELIMITER);
   } else {
-    text.value = frames.join(',');
+    text.value = frames.join(DELIMITER);
   }
   currentShape().reset();
   lastGridFraction = gridFraction;
