@@ -21,7 +21,7 @@
       <input type="range" id="zoom" name="zoom" min="2" max="200" value="20">
       <input type="range" id="grid" name="grid" min="1" max="4" value="1">
     </form>
-    <ul style="top:10px;left:10px">
+    <ul style="top:10px;left:10px" class="tools">
       <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i></li>
       <li id="pencil"><i class="fa fa-pencil" title="L: Line"></i></li>
       <li id="plus"><i class="fa fa-plus" title="A: Add"></i></li>
@@ -31,7 +31,7 @@
       <li id="anchor"><i class="fa fa-anchor" title="S: Toggle Grid Snap"></i></li>
     </ul>
 
-    <ul style="top:45px;left:10px;">
+    <ul style="top:45px;left:10px;" class="tools">
       <li id="undo"><i class="fa fa-undo" title="U: Undo"></i></li>
       <li id="redo"><i class="fa fa-repeat" title="R: Redo"></i></li>
       <li id="refresh"><i class="fa fa-trash-o" title="Delete All"></i></li>
@@ -209,6 +209,16 @@ function currentShape() {
   return shapes[frame];
 }
 
+var previousButton;
+function setCurrentCanvasClass(canvasClass, element) {
+  canvas.className = 'cursor-' + canvasClass;
+  if (element) {
+    if (previousButton) previousButton.className = '';
+    element.className = 'active';
+    previousButton = element;
+  }
+}
+
 //---------------------------------
 // Distance to line segment.
 // Adapted from http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
@@ -305,6 +315,29 @@ function redo(){
 function switchTool(newTool){
     currentTool = newTool;
     redraw();
+    switch(currentTool){
+        case Tools.MOVE:
+          setCurrentCanvasClass('move', buttonArrows);
+          break;
+        case Tools.LINE:
+          setCurrentCanvasClass('pencil', buttonPencil);
+          break;
+        case Tools.ADD:
+          setCurrentCanvasClass('add', buttonPlus);
+          break;
+        case Tools.CUT:
+          setCurrentCanvasClass('cut', buttonScissors);
+          break;
+        case Tools.ORIGIN:
+          setCurrentCanvasClass('origin', buttonCrosshairs);
+          break;
+        case Tools.VISIBILITY:
+          setCurrentCanvasClass('visibility', buttonEyeSlash);
+          break;
+        case Tools.HAND:
+          setCurrentCanvasClass('hand', buttonHand);
+          break;
+    }
 }
 
 function redraw(){
@@ -981,32 +1014,41 @@ window.onmousemove = function(evt) {
 };
 
 // Button
-document.getElementById("pencil").onclick = function() {
+var buttonPencil = document.getElementById("pencil");
+var buttonArrows = document.getElementById("arrows");
+var buttonPlus = document.getElementById("plus");
+var buttonScissors = document.getElementById("scissors");
+var buttonCrosshairs = document.getElementById("crosshairs");
+var buttonEyeSlash = document.getElementById("eye-slash");
+var buttonAnchor = document.getElementById("anchor");
+var buttonHand = document.getElementById("hand");
+
+buttonPencil.onclick = function() {
     switchTool(Tools.LINE);
 };
-document.getElementById("arrows").onclick = function() {
+buttonArrows.onclick = function() {
     switchTool(Tools.MOVE);
 };
-document.getElementById("plus").onclick = function() {
+buttonPlus.onclick = function() {
     switchTool(Tools.ADD);
 };
-document.getElementById("scissors").onclick = function() {
+buttonScissors.onclick = function() {
     switchTool(Tools.CUT);
 };
-document.getElementById("crosshairs").onclick = function() {
+buttonCrosshairs.onclick = function() {
     switchTool(Tools.ORIGIN);
 };
-document.getElementById("eye-slash").onclick = function() {
+buttonEyeSlash.onclick = function() {
     switchTool(Tools.VISIBILITY);
 };
-document.getElementById("anchor").onclick = function() {
+buttonAnchor.onclick = function() {
     snap_enabled = !snap_enabled;
     redraw();
 };
-document.getElementById("hand").onclick = function() {
+buttonHand.onclick = function() {
     switchTool(Tools.HAND);
 };
-document.getElementById("hand").ondblclick = function() {
+buttonHand.ondblclick = function() {
     panX = 0;
     panY = 0;
     drag.x = 0;
@@ -1197,7 +1239,10 @@ document.addEventListener("keydown", function(evt) {
     }
 });
 
+switchTool(Tools.LINE);
+
 }).call();
+
 </script>
 </body>
 </html>

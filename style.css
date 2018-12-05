@@ -7,6 +7,15 @@ input:focus,textarea:focus,button{
     outline:0
 }
 
+.cursor-pencil { cursor: crosshair; }
+.cursor-hand { cursor: grab; }
+.cursor-move { cursor: pointer; }
+.cursor-add, .cursor-cut { cursor: cell; }
+
+li.active {
+  background-color:#ececec
+}
+
 canvas{
     background-color:#fff;
     display:block;
@@ -15,6 +24,7 @@ canvas{
     top:5px;
     left:5px;
     border:1px solid #ccc;
+    cursor: default;
 }
 
 .wrapper {
