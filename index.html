@@ -1293,6 +1293,11 @@ document.addEventListener("keydown", function(evt) {
     }
 });
 
+var urlParam = window.location.search.substring(1);
+if (urlParam.length) {
+  text.value = urlParam;
+  text.onchange();
+}
 switchTool(Tools.LINE);
 
 }).call();
