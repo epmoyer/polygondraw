@@ -35,6 +35,7 @@
       <li id="redo"><i class="fa fa-repeat" title="R: Redo"></i></li>
       <li id="refresh"><i class="fa fa-trash-o" title="Delete All"></i></li>
       <li id="hand"><i class="fa fa-hand-paper-o" title="H: Hand"></i></li>
+      <li id="scale"><i class="fa fa-balance-scale" title="X: Scale"></i></li>
     </ul>
 
     <!-- <ol style="bottom:89px;left:10px;">
@@ -817,7 +818,7 @@ text.onkeydown = function(evt) {
   }
 }
 text.onchange = function() {
-  var points = text.value.replace(/[^\[\],\d.-]/g, '');
+  var points = text.value.replace(/[^\[\],\d\.-]/g, '');
   if (/\[/.test(points)) {
     var parsed;
     try {
@@ -1060,6 +1061,7 @@ var buttonCrosshairs = document.getElementById("crosshairs");
 var buttonEyeSlash = document.getElementById("eye-slash");
 var buttonAnchor = document.getElementById("anchor");
 var buttonHand = document.getElementById("hand");
+var buttonScale = document.getElementById("scale");
 
 buttonPencil.onclick = function() {
     switchTool(Tools.LINE);
@@ -1096,6 +1098,17 @@ buttonHand.ondblclick = function() {
     drag.active = false;
     grid.set(parseInt(form.zoom.value));
     redraw();
+};
+buttonScale.onclick = function() {
+  var scaleFactor = eval(prompt("Enter scale factor:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, ''));
+  if (!isNaN(scaleFactor)) {
+    var points = JSON.parse('[' + text.value + ']');
+    for (var i = 0, length = points.length; i < length; i++) {
+      if (points[i] < 7000) { points[i] *= scaleFactor; }
+    }
+    text.value = points;
+    text.onchange();
+  }
 };
 var color_index;
 for(color_index = 1; color_index<=16; color_index++){
@@ -1273,6 +1286,9 @@ document.addEventListener("keydown", function(evt) {
         case 83: // "S"
             snap_enabled = !snap_enabled;
             redraw();
+            break;
+        case 88:
+            buttonScale.onclick();
             break;
     }
 });
