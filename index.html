@@ -16,26 +16,26 @@
         <textarea name="coords"></textarea>
         <textarea name="frames" class="invisible">sup</textarea>
       </div>
-      <input type="range" id="speed" name="speed" min="100" max="1000" value="500">
-      <input type="range" id="zoom" name="zoom" min="2" max="200" value="20">
-      <input type="range" id="grid" name="grid" min="1" max="4" value="1">
+      <input type="range" id="speed" name="speed" min="100" max="1000" value="500" title="animation playback speed">
+      <input type="range" id="zoom" name="zoom" min="2" max="200" value="20" title="magnification">
+      <input type="range" id="grid" name="grid" min="1" max="4" value="1" title="grid subdivision">
     </form>
     <ul style="top:10px;left:10px" class="tools">
-      <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i></li>
-      <li id="pencil"><i class="fa fa-pencil" title="L: Line"></i></li>
-      <li id="plus"><i class="fa fa-plus" title="A: Add"></i></li>
-      <li id="scissors"><i class="fa fa-scissors" title="C: Cut"></i></li>
-      <li id="crosshairs"><i class="fa fa-crosshairs" title="O: Change Origin"></i></li>
-      <li id="eye-slash"><i class="fa fa-eye-slash" title="V: Toggle Visibility"></i></li>
-      <li id="anchor"><i class="fa fa-anchor" title="S: Toggle Grid Snap"></i></li>
+      <li id="arrows" title="M: Move"><i class="fa fa-arrows"></i></li>
+      <li id="pencil" title="L: Line"><i class="fa fa-pencil"></i></li>
+      <li id="plus" title="A: Add"><i class="fa fa-plus"></i></li>
+      <li id="scissors" title="C: Cut"><i class="fa fa-scissors"></i></li>
+      <li id="crosshairs" title="O: Change Origin"><i class="fa fa-crosshairs"></i></li>
+      <li id="eye-slash" title="V: Toggle Visibility"><i class="fa fa-eye-slash"></i></li>
+      <li id="anchor" title="S: Toggle Grid Snap"><i class="fa fa-anchor"></i></li>
     </ul>
 
     <ul style="top:45px;left:10px;" class="tools">
-      <li id="undo"><i class="fa fa-undo" title="U: Undo"></i></li>
-      <li id="redo"><i class="fa fa-repeat" title="R: Redo"></i></li>
-      <li id="refresh"><i class="fa fa-trash-o" title="Delete All"></i></li>
-      <li id="hand"><i class="fa fa-hand-paper-o" title="H: Hand"></i></li>
-      <li id="scale"><i class="fa fa-balance-scale" title="X: Scale"></i></li>
+      <li id="undo" title="U: Undo"><i class="fa fa-undo"></i></li>
+      <li id="redo" title="R: Redo"><i class="fa fa-repeat"></i></li>
+      <li id="refresh" title="Delete All"><i class="fa fa-trash-o"></i></li>
+      <li id="hand" title="H: Hand"><i class="fa fa-hand-paper-o"></i></li>
+      <li id="scale" title="X: Scale"><i class="fa fa-balance-scale"></i></li>
     </ul>
 
     <!-- <ol style="bottom:89px;left:10px;">
@@ -64,19 +64,19 @@
         <li id="color:16" style="background-color:#ADD8E6"><i class="fa fa-paint-brush" title="Color: LIGHTBLUE"></i>
     </ul>
 
-    <div class="visibility-controls" style="bottom:50px;right:11px">
-        <input type="checkbox" id="prev-frame-visible" title="reveal previous frame" />
-        <input type="checkbox" id="next-frame-visible" title="reveal next frame" />
+    <div class="visibility-controls" style="bottom:50px;right:0px">
+        <input type="checkbox" id="prev-frame-visible" title="rotoscope reveal previous frame" />
+        <input type="checkbox" id="next-frame-visible" title="rotoscope reveal next frame" />
     </div>
 
-    <ul class="frame-controls" style="bottom:40px;right:11px">
-        <li id="add-button">+</li>
-        <li id="delete-button">-</li>
-        <li id="back-button">&lt;</li>
-        <li id="next-button">&gt;</li>
-        <li id="play-button">play</li>
-        <li id="stop-button">stop</li>
-        <li id="clipboard-button"><i class="fa fa-clipboard" title="Copy all frames to clipboard"></i>
+    <ul class="frame-controls" style="bottom:40px;right:20px">
+      <li id="add-button" title="Add new frame with existing points"><i class="fa fa-plus"></i></li>
+      <li id="delete-button" title="Delete current frame"><i class="fa fa-minus"></i></li>
+      <li id="back-button" title="Previous frame"><i class="fa fa-backward"></i></li>
+      <li id="next-button" title="Next frame"><i class="fa fa-forward"></i></li>
+      <li id="play-button" title="Play animation"><i class="fa fa-play"></i></li>
+      <li id="stop-button" title="Stop animation"><i class="fa fa-stop"></i></li>
+        <li id="clipboard-button" title="Copy all frames to clipboard"><i class="fa fa-clipboard"></i></li>
     </ul>
 </div>
 

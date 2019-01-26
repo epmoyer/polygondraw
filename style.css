@@ -123,11 +123,11 @@ input#grid  {
 }
 
 input#prev-frame-visible {
-  margin: 0 0 0 110px;
+  margin: 0 0 0 170px;
 }
 
 input#next-frame-visible {
-  margin: 0 0 0 10px;
+  margin: 0 0 0 17px;
 }
 
 .frame-controls, li, .textarea-container{
