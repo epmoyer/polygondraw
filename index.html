@@ -1,6 +1,5 @@
 <!doctype html>
-<html lang="en">
-<head> <meta charset="UTF-8">
+<html lang="en"> <head> <meta charset="UTF-8">
     <title>PolygonDraw</title>
 
     <meta name="viewport" content="user-scalable=no" />
@@ -130,7 +129,7 @@ var shapes, frame, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, 
 var lastMovedPoint;
 
 var HANDLE_RELATIVE_RADIUS = 0.17; // Vertex handle radius relative to grid spacing
-var selectedHandleIndex = 0;
+var selectedHandleIndexes = [];
 
 var PEN_COMMAND = 9000;
 var PEN_UP = 7000;
@@ -314,6 +313,7 @@ function redo(){
 
 function switchTool(newTool){
     currentTool = newTool;
+    var shouldResetSelectedHandleIndexes = true;
     redraw();
     switch(currentTool){
         case Tools.MOVE:
@@ -335,9 +335,11 @@ function switchTool(newTool){
           setCurrentCanvasClass('visibility', buttonEyeSlash);
           break;
         case Tools.HAND:
+          shouldResetSelectedHandleIndexes = false;
           setCurrentCanvasClass('hand', buttonHand);
           break;
     }
+    if (shouldResetSelectedHandleIndexes) { selectedHandleIndexes = []; }
 }
 
 function redraw(){
@@ -591,7 +593,7 @@ Shape.prototype = {
 
         // Draw vertex handles
         for (i = 0; i < this.points.length; i++) {
-            if (i===selectedHandleIndex){
+          if (selectedHandleIndexes.indexOf(i) !== -1) {
                 color = 'red';
             }
             else if (i == this.points.length - 1){
@@ -808,8 +810,14 @@ redraw();
 
 window.onresize = windowResize;
 
+text.onkeydown = function(evt) {
+  if (evt.which === 13) {
+    text.onchange();
+    text.blur();
+  }
+}
 text.onchange = function() {
-  var points = text.value;
+  var points = text.value.replace(/[^\[\],\d.-]/g, '');
   if (/\[/.test(points)) {
     var parsed;
     try {
@@ -868,12 +876,11 @@ window.onmouseup = function(evt) {
   mouseIsDown = false;
   var shape = currentShape();
   if (currentTool === Tools.MOVE && lastMovedPoint) {
-    var point = shape.points[selectedHandleIndex];
+    var point = shape.points[selectedHandleIndexes[selectedHandleIndexes.length - 1]];
     if (lastMovedPoint.x !== point.x || lastMovedPoint.y !== point.y) {
       history[frame].commit(shape.points);
     }
   }
-  selectedHandleIndex = null;
 };
 
 window.onmousedown = function(evt) {
@@ -906,10 +913,30 @@ window.onmousedown = function(evt) {
             break;
 
         case Tools.MOVE:
-            selectedHandleIndex = closestPoint(click);
+            var selectedHandleIndex = closestPoint(click);
             var point = shape.points[selectedHandleIndex];
             lastMovedPoint = { x: point.x, y: point.y };
-        console.log(lastMovedPoint);
+            var index = selectedHandleIndexes.indexOf(selectedHandleIndex);
+
+            var isSelected = index !== -1;
+
+            if (isSelected) {
+              selectedHandleIndexes.splice(index, 1);
+            } else if (!evt.shiftKey) {
+              selectedHandleIndexes = [];
+            }
+
+            if (!isSelected || !evt.shiftKey) {
+              selectedHandleIndexes.push(selectedHandleIndex);
+
+              for (var i = 0, length = shape.points.length; i < length; i++) {
+                var toCompare = shape.points[i];
+
+                if (selectedHandleIndexes.indexOf(i) === -1 && point.x === toCompare.x && point.y === toCompare.y) {
+                  selectedHandleIndexes.push(i);
+                }
+              }
+            }
             break;
 
         case Tools.ADD:
@@ -999,9 +1026,20 @@ window.onmousemove = function(evt) {
         ctx.moveTo(c.x, c.y);
         ctx.lineTo(x, y);
         ctx.stroke();
-    } else if (currentTool === Tools.MOVE && mouseIsDown && selectedHandleIndex !== null) {
-        shape.points[selectedHandleIndex].x = mousePos.x;
-        shape.points[selectedHandleIndex].y = mousePos.y;
+    } else if (currentTool === Tools.MOVE && mouseIsDown && selectedHandleIndexes.length) {
+      var index = selectedHandleIndexes.length - 1;
+      var selectedHandleIndex = selectedHandleIndexes[index];
+      var deltaX = mousePos.x - shape.points[selectedHandleIndex].x;
+      var deltaY = mousePos.y - shape.points[selectedHandleIndex].y;
+      shape.points[selectedHandleIndex].x = mousePos.x;
+      shape.points[selectedHandleIndex].y = mousePos.y;
+
+      while (index > 0) {
+        index -= 1;
+        selectedHandleIndex = selectedHandleIndexes[index];
+        shape.points[selectedHandleIndex].x += deltaX;
+        shape.points[selectedHandleIndex].y += deltaY;
+      }
     } else if (currentTool === Tools.HAND && drag.active) {
       var zoomValue = parseInt(form.zoom.value);
       var gridDivisionValue = parseInt(form.grid.value);
