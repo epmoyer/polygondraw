@@ -650,7 +650,12 @@ History.prototype = {
 
     copy: function(history){
       this.tail = history.tail;
-      this.pointsHistory = history.clone(history.pointsHistory);
+      this.pointsHistory = [];
+      for (var i = 0, length = history.pointsHistory.length; i < length; i++) {
+        var pointsFromHistoryEntry = history.pointsHistory[i];
+        var cloned = history.clone(pointsFromHistoryEntry);
+        this.pointsHistory.push(cloned);
+      }
     },
 
     commit: function(points){
