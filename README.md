@@ -26,15 +26,19 @@ Brushes              |  Color             | _(N/A)_       | Set a color
 # Animation Controls
 Above the magnification slider is a small slider for the animation speed.
 
-Button         | Description
--------------- | -----------------------------------------------------------------------------
-Plus           | adds a new frame and copys all existing points from the previous frame
-Minus          | deletes the current frame you are viewing (unless you are on the first frame)
-Previous frame | move to the previous frame
-Next frame     | move to the next frame
-Play           | play animation
-Stop           | stop animation
-Export         | Export all frames to clipboard copy buffer
+Button         | Hotkey      | Description
+-------------- | ----------  | -----------------------------------------------------------------------------
+Plus           |             | adds a new frame and copys all existing points from the previous frame
+Minus          |             | deletes the current frame you are viewing (unless you are on the first frame)
+Previous frame | Left arrow  | move to the previous frame
+Next frame     | Right arrow | move to the next frame
+Play           |             | play animation
+Stop           |             | stop animation
+Export         |             | Export all frames to clipboard copy buffer
+
+NOTE:
+* shift + left arrow skips to beginning frame
+* shift + right arrow skips to end frame
 
 ## Rotoscoping
 Checkbox location           | Description
