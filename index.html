@@ -1159,19 +1159,23 @@ document.getElementById("next-frame-visible").onclick = function() {
   redraw();
 };
 
-document.getElementById("back-button").onclick = function() {
+var switchToPreviousFrame = function() {
+  switchToFrame(frame - 1);
+};
+
+var switchToNextFrame = function() {
+  switchToFrame(frame + 1);
+};
+
+var switchToFrame = function(newFrame) {
+  if (newFrame < 0 || newFrame > shapes.length - 1) return;
   stopAnimation();
-  if (frame === 0) return;
-  frame -= 1;
+  frame = newFrame;
   redraw();
 };
 
-document.getElementById("next-button").onclick = function() {
-  stopAnimation();
-  if (frame === shapes.length - 1) return;
-  frame += 1;
-  redraw();
-};
+document.getElementById("back-button").onclick = switchToPreviousFrame;
+document.getElementById("next-button").onclick = switchToNextFrame;
 
 document.getElementById("add-button").onclick = function() {
   stopAnimation();
@@ -1301,6 +1305,20 @@ document.addEventListener("keydown", function(evt) {
             break;
         case 88:
             buttonScale.onclick();
+            break;
+        case 37:
+            if (evt.shiftKey) {
+              switchToFrame(0);
+            } else {
+              switchToPreviousFrame();
+            }
+            break;
+        case 39:
+            if (evt.shiftKey) {
+              switchToFrame(shapes.length - 1);
+            } else {
+              switchToNextFrame();
+            }
             break;
     }
 });
