@@ -634,50 +634,41 @@ History.prototype = {
 
     copy: function(history){
       this.tail = history.tail;
-      this.pointsHistory = [];
-      for (var i = 0, length = history.pointsHistory.length; i < length; i++) {
-        this.pointsHistory.push(history.pointsHistory[i]);
-      }
+      this.pointsHistory = history.clone(history.pointsHistory);
     },
 
     commit: function(points){
-        // Remove any history after the current tail
-        var splice_index = this.tail + 1;
-        if(splice_index <= this.pointsHistory.length - 1){
-            this.pointsHistory.splice(splice_index, this.pointsHistory.length - splice_index);
+      var pointsCanBeCommited = function(pointsA, pointsB) {
+        if (pointsA.length !== pointsB.length) return true;
+        for (var i = 0, length = pointsA.length; i < length; i++) {
+          var pointA = pointsA[i];
+          var pointB = pointsB[i];
+          for (var key in pointA) {
+            if (pointA.hasOwnProperty(key) && pointA[key] !== pointB[key]) return true;
+          }
         }
-        // Add the new point set to the history
-        var clone = this.clone(points);
-        this.pointsHistory.push(this.clone(points));
-        this.tail = this.pointsHistory.length - 1;
+        return false;
+      }
+
+      var lastPoints = this.pointsHistory[this.tail];
+      if (lastPoints && !pointsCanBeCommited(points, lastPoints)) return;
+      this.pointsHistory = this.pointsHistory.slice(0, this.tail + 1);
+      this.pointsHistory.push(this.clone(points));
+      this.tail = this.pointsHistory.length - 1;
     },
 
     undo: function(){
-        --this.tail;
-        if(this.tail <= -1){
-            this.tail = -1;
-            return [];
-        }
-        else {
-            return this.clone(this.pointsHistory[this.tail]);
-        }
+      if (this.tail >= 0) this.tail -= 1;
+      return this.clone(this.pointsHistory[this.tail]);
     },
 
     redo: function(){
-        ++this.tail;
-        if(this.tail>this.pointsHistory.length-1){
-            this.tail = this.pointsHistory.length-1;
-            console.log("Nothing to redo.");
-        }
-        if(this.tail === -1){
-            return [];
-        }
-        else {
-            return this.clone(this.pointsHistory[this.tail]);
-        }
+      if (this.tail < this.pointsHistory.length - 1) this.tail += 1;
+      return this.clone(this.pointsHistory[this.tail]);
     },
 
     clone: function(points){
+        if (!points) return [];
         var pointsClone = [];
         for(var i=0, len=points.length; i<len; i++){
             pointsClone.push({
