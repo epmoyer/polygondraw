@@ -1116,7 +1116,7 @@ buttonScale.onclick = function() {
   if (!isNaN(scaleFactor)) {
     var points = JSON.parse('[' + text.value + ']');
     for (var i = 0, length = points.length; i < length; i++) {
-      if (points[i] < 7000) { points[i] *= scaleFactor; }
+      if (points[i] < PEN_UP) { points[i] *= scaleFactor; }
     }
     text.value = points;
     text.onchange();
