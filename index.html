@@ -993,9 +993,18 @@ window.onmousedown = function(evt) {
             break;
         case Tools.VISIBILITY:
             // Toggle visibility of closest point
-          if (tempVisibility && canSetVisibilityForIndex(tempVisibility.index, shape)) {
+          if (tempVisibility) {
+            if (canSetVisibilityForIndex(tempVisibility.index, shape)) {
               clearTempVisibility(!tempVisibility.state);
               history[frame].commit(shape.points);
+            }
+          } else {
+            var index = indexForPoint(click);
+            if (canSetVisibilityForIndex(index, shape)) {
+              shape.points[index].visible = !shape.points[index].visible;
+              redraw();
+              history[frame].commit(shape.points);
+            }
           }
           break;
         case Tools.COLORIZE:
@@ -1080,7 +1089,14 @@ window.onmousemove = function(evt) {
       if (index === -1) {
         if (tempVisibility) clearTempVisibility(tempVisibility.state);
       } else {
-        if ((tempVisibility && tempVisibility.index === index) || !canSetVisibilityForIndex(index, shape)) return;
+        setCurrentCanvasClass('visibility');
+        if (tempVisibility && tempVisibility.index === index) {
+          return;
+        } else if (!canSetVisibilityForIndex(index, shape)) {
+          setCurrentCanvasClass('forbidden');
+          return;
+        }
+
         if (tempVisibility && tempVisibility.index !== index) clearTempVisibility(tempVisibility.state);
         var point = shape.points[index];
         tempVisibility = {
