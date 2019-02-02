@@ -813,7 +813,6 @@ window.onresize = windowResize;
 
 text.onkeydown = function(evt) {
   if (evt.which === 13) {
-    text.onchange();
     text.blur();
   }
 }
@@ -914,7 +913,11 @@ window.onmousedown = function(evt) {
             break;
 
         case Tools.MOVE:
-            var selectedHandleIndex = closestPoint(click);
+            var selectedHandleIndex = indexForPoint(click);
+            if (selectedHandleIndex === -1) {
+              mouseIsDown = false;
+              break;
+            }
             var point = shape.points[selectedHandleIndex];
             lastMovedPoint = { x: point.x, y: point.y };
             var index = selectedHandleIndexes.indexOf(selectedHandleIndex);
@@ -960,7 +963,8 @@ window.onmousedown = function(evt) {
             break;
 
         case Tools.CUT:
-            index = closestPoint(click);
+            var index = indexForPoint(click);
+            if (index === -1) break;
             shape.deletePoint(index);
             history[frame].commit(shape.points);
             break;
@@ -991,17 +995,25 @@ window.onmousedown = function(evt) {
             break;
         case Tools.COLORIZE:
             // Toggle visibility of closest point
-            index = closestPoint(click);
-            if(index !== null){
-                shape.colorizePoint(index, current_selected_color);
-                history[frame].commit(shape.points);
-            }
+            var index = indexForPoint(click);
+            if (index === -1) break;
+            shape.colorizePoint(index, current_selected_color);
+            history[frame].commit(shape.points);
             break;
     }
 
 
     text.blur();
     redraw();
+};
+
+var indexForPoint = function(point) {
+  var shape = currentShape();
+  for (var i = 0, length = shape.points.length; i < length; i++) {
+    var currentPoint = shape.points[i];
+    if (currentPoint.x === point.x && currentPoint.y === point.y) return i;
+  }
+  return -1;
 };
 
 window.onmousemove = function(evt) {
