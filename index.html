@@ -339,6 +339,10 @@ function switchTool(newTool){
           shouldResetSelectedHandleIndexes = false;
           setCurrentCanvasClass('hand', buttonHand);
           break;
+        case Tools.COLORIZE:
+          if (previousButton) previousButton.className = '';
+          previousButton = undefined;
+          break;
     }
     if (shouldResetSelectedHandleIndexes) { selectedHandleIndexes = []; }
 }
@@ -379,6 +383,7 @@ function redraw(){
 
     // Show current tool
     var modeText = "";
+
     switch(currentTool){
         case Tools.MOVE:
             modeText = "Move";
@@ -406,7 +411,6 @@ function redraw(){
             break;
     }
     ctx.fillText(modeText, x_pos, y_pos);
-    ctx.fillStyle = "white";
     y_pos += y_step;
     var frameText = 'Frame ' + (frame + 1) + '/' + shapes.length;
     if (interval) frameText += ' (ANIMATING)';
@@ -414,10 +418,8 @@ function redraw(){
     ctx.restore();
     text.value = getFrameAtIndex(frame).join(DELIMITER);
     y_pos += y_step;
-    ctx.fillStyle = "white";
     ctx.fillText('GRID LEVEL: ' + gridDivision.value, x_pos, y_pos);
     y_pos += y_step;
-    ctx.fillStyle = "white";
     ctx.fillText('PAN: (' + Math.floor(panX) + ', ' + Math.floor(panY) + ')', x_pos, y_pos);
 }
 
