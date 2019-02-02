@@ -845,7 +845,6 @@ text.onchange = function() {
     currentShape().reset();
   }
 
-  history[frame].clear();
   history[frame].commit(currentShape().points);
   redraw();
 };
