@@ -349,7 +349,10 @@ function switchTool(newTool){
           previousButton = undefined;
           break;
     }
-    if (shouldResetSelectedHandleIndexes) { selectedHandleIndexes = []; }
+    if (shouldResetSelectedHandleIndexes) {
+      selectedHandleIndexes = [];
+      redraw();
+    }
 }
 
 function redraw(){
@@ -920,6 +923,7 @@ window.onmousedown = function(evt) {
         case Tools.MOVE:
             var selectedHandleIndex = indexForPoint(click);
             if (selectedHandleIndex === -1) {
+              selectedHandleIndexes = [];
               mouseIsDown = false;
               break;
             }
@@ -1204,6 +1208,7 @@ var switchToFrame = function(newFrame) {
   if (newFrame < 0 || newFrame > shapes.length - 1) return;
   stopAnimation();
   frame = newFrame;
+  selectedHandleIndexes = [];
   redraw();
 };
 
@@ -1218,6 +1223,7 @@ document.getElementById("add-button").onclick = function() {
   var newHistory = new History();
   newHistory.copy(previousHistory);
   history.splice(frame, 0, newHistory);
+  selectedHandleIndexes = [];
   redraw();
 };
 
@@ -1227,6 +1233,7 @@ document.getElementById("delete-button").onclick = function() {
   shapes.splice(frame, 1);
   history.splice(frame, 1);
   if (frame > shapes.length - 1) frame -= 1;
+  selectedHandleIndexes = [];
   redraw();
 };
 
@@ -1247,6 +1254,7 @@ document.getElementById("clipboard-button").onclick = function() {
 var interval;
 var currentSpeed;
 var animate = function() {
+  selectedHandleIndexes = [];
   if (interval || shapes.length <= 1) return;
   currentSpeed = 1000 - (parseInt(speed.value) || 0);
   interval = setInterval(function() {
