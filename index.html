@@ -1290,7 +1290,7 @@ gridDivision.oninput  = updateGridFraction;
 
 // Keyboard handler
 document.addEventListener("keydown", function(evt) {
-    if (evt.metaKey) return;
+  if (document.activeElement === text || evt.metaKey) return;
     switch(evt.keyCode){
         case 77: // "M"
         case 27: // <escape>
