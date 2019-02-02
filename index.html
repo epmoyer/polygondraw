@@ -939,9 +939,9 @@ window.onmousedown = function(evt) {
               selectedHandleIndexes = [];
             }
 
-            if (!isSelected || !evt.shiftKey) {
-              selectedHandleIndexes.push(selectedHandleIndex);
+            selectedHandleIndexes.push(selectedHandleIndex);
 
+            if (evt.shiftKey) {
               for (var i = 0, length = shape.points.length; i < length; i++) {
                 var toCompare = shape.points[i];
 
@@ -1018,7 +1018,7 @@ var canSetVisibilityForIndex = function(index, shape) {
 
 var indexForPoint = function(point) {
   var shape = currentShape();
-  for (var i = 0, length = shape.points.length; i < length; i++) {
+  for (var i = shape.points.length - 1; i >= 0; i--) {
     var currentPoint = shape.points[i];
     if (currentPoint.x === point.x && currentPoint.y === point.y) return i;
   }
