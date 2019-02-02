@@ -878,7 +878,7 @@ window.onmouseup = function(evt) {
   var shape = currentShape();
   if (currentTool === Tools.MOVE && lastMovedPoint) {
     var point = shape.points[selectedHandleIndexes[selectedHandleIndexes.length - 1]];
-    if (lastMovedPoint.x !== point.x || lastMovedPoint.y !== point.y) {
+    if (point && (lastMovedPoint.x !== point.x || lastMovedPoint.y !== point.y)) {
       history[frame].commit(shape.points);
     }
   }
