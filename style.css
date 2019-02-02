@@ -1,10 +1,11 @@
 *{
     padding:0;
-    margin:0
+    margin:0;
+    outline:0;
 }
 
 input:focus,textarea:focus,button{
-    outline:0
+    outline:0;
 }
 
 .cursor-pencil { cursor: crosshair; }
@@ -13,7 +14,7 @@ input:focus,textarea:focus,button{
 .cursor-add, .cursor-cut { cursor: cell; }
 
 li.active {
-  background-color:#ececec
+  background-color:#ececec;
 }
 
 canvas{
@@ -89,6 +90,7 @@ input[type=range],.textarea-container{
     width: 300px;
     bottom:80px;
     left: 2px;
+    border: none;
 }
 
 input#speed {
@@ -120,6 +122,19 @@ input#grid  {
   position: absolute;
   margin: 0 0 20px 0;
   width: 100%;
+  border: none;
+}
+
+input#prev-frame-opacity {
+  bottom: 2px;
+  width: 50px;
+  left: 100px;
+}
+
+input#next-frame-opacity {
+  bottom: 2px;
+  width: 50px;
+  right: 55px;
 }
 
 input#prev-frame-visible {
@@ -141,15 +156,15 @@ input#next-frame-visible {
 input[type=range]{
     -webkit-appearance:none;
     background-color:#000;
-    height:2px;
+    height:1px;
     margin:5px 0;
 }
 
 input[type=range]::-webkit-slider-thumb{
     -webkit-appearance:none;
     border-radius:6px;
-    border:1px solid #ccc;
-    background-color:#fff;
+    border:1px solid #999;
+    background-color:#ccc;
     width:12px;
     height:12px
 }
@@ -161,10 +176,6 @@ textarea {
     -moz-box-sizing:border-box;
     height: 100%;
     width: 100%;
-}
-
-textarea:focus{
-    outline:0
 }
 
 label{

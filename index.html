@@ -65,6 +65,8 @@
     </ul>
 
     <div class="visibility-controls" style="bottom:50px;right:0px">
+        <input type="range" id="prev-frame-opacity" min="0" max="100" value="50" title="rotoscope opacity">
+        <input type="range" id="next-frame-opacity" min="0" max="100" value="50" title="rotoscope opacity">
         <input type="checkbox" id="prev-frame-visible" title="rotoscope reveal previous frame" />
         <input type="checkbox" id="next-frame-visible" title="rotoscope reveal next frame" />
     </div>
@@ -108,6 +110,8 @@ var text = form.coords;
 var ctx = canvas.getContext("2d");
 var speed = form.speed;
 var gridDivision = form.grid;
+var previousFrameOpacity = document.getElementById("prev-frame-opacity");
+var nextFrameOpacity = document.getElementById("next-frame-opacity");
 
 // Global vars
 var Tools = {
@@ -353,13 +357,15 @@ function redraw(){
     var y_pos = 15;
     var y_step = 15;
     grid.draw();
-    var previousFrame = shapes[frame - 1];
-    var nextFrame = shapes[frame + 1];
+    var previousFrame = shapes[frame - 1] || shapes[shapes.length - 1];
+    var nextFrame = shapes[frame + 1] || shapes[0];
+    var previousAlpha = parseInt(previousFrameOpacity.value) / 100;
+    var nextAlpha = parseInt(nextFrameOpacity.value) / 100;
     if (previousFrameVisible && previousFrame) {
-      previousFrame.draw(grid, '#aa6666');
+      previousFrame.draw(grid, "rgba(128, 255, 255, " + previousAlpha + ")");
     }
     if (nextFrameVisible && nextFrame) {
-      nextFrame.draw(grid, '#6666aa');
+      nextFrame.draw(grid, "rgba(255, 128, 128, " + nextAlpha + ")");
     }
     currentShape().draw(grid);
     drawPoints();
@@ -585,37 +591,43 @@ Shape.prototype = {
                     ctx.beginPath();
                     ctx.moveTo(p.x, p.y);
                 }
-                else{
-                    ctx.strokeStyle = 'gray';
-                    ctx.setLineDash([5, 10]);
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
+                else {
+                  if (faintColor) {
+                    ctx.strokeStyle = 'black';
+                  } else {
+                    ctx.strokeStyle = '#444';
+                  }
+                  ctx.setLineDash([5, 10]);
+                  ctx.beginPath();
+                  ctx.moveTo(p.x, p.y);
                 }
             }
             ctx.stroke();
         }
 
         // Draw vertex handles
-        for (i = 0; i < this.points.length; i++) {
-          if (selectedHandleIndexes.indexOf(i) !== -1) {
-                color = 'red';
-            }
-            else if (i == this.points.length - 1){
-                color = 'blue';
-            }
-            else if (i == 0){
-                color = 'cyan';
-            }
-            else {
-                color = 'green';
-            }
-            p = grid_.toPoint(this.points[i]);
-            ctx.fillStyle = color;
-            ctx.strokeStyle = color;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, HANDLE_RELATIVE_RADIUS * grid.size, 0, 2 * Math.PI, false);
-            ctx.fill();
-            ctx.stroke();
+        if (!faintColor) {
+          for (i = 0; i < this.points.length; i++) {
+            if (selectedHandleIndexes.indexOf(i) !== -1) {
+                  color = 'red';
+              }
+              else if (i == this.points.length - 1){
+                  color = 'blue';
+              }
+              else if (i == 0){
+                  color = 'cyan';
+              }
+              else {
+                  color = 'green';
+              }
+              p = grid_.toPoint(this.points[i]);
+              ctx.fillStyle = color;
+              ctx.strokeStyle = color;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, HANDLE_RELATIVE_RADIUS * grid.size, 0, 2 * Math.PI, false);
+              ctx.fill();
+              ctx.stroke();
+          }
         }
         ctx.restore();
     },
@@ -1284,6 +1296,10 @@ document.getElementById("stop-button").onclick = stopAnimation;
 
 speed.onchange = restartAnimation;
 speed.oninput  = restartAnimation;
+previousFrameOpacity.onchange = redraw;
+previousFrameOpacity.oninput = redraw;
+nextFrameOpacity.onchange = redraw;
+nextFrameOpacity.oninput = redraw;
 
 gridDivision.onchange = updateGridFraction;
 gridDivision.oninput  = updateGridFraction;

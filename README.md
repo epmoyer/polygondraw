@@ -43,8 +43,11 @@ NOTE:
 ## Rotoscoping
 Checkbox location           | Description
 --------------------------- | ------------------------------------
-Above previous frame button | Rotoscope previous frame (faint red)
-Above next frame button     | Rotoscope next frame (faint blue)
+Above previous frame button | Rotoscope previous frame (neon red)
+Above next frame button     | Rotoscope next frame (neon blue)
+
+Note:
+* the sliders beside the above mentioned checkboxes control the opacity for the rotoscoping
 
 # Data format
 Vector data has the form [x1, y1, x2, y2, x3, y3, ...., xN, yN]
