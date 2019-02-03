@@ -132,6 +132,9 @@ var Styles = {
 };
 var shapes, frame, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
 var lastMovedPoint;
+var hideHandles = false;
+var hideGrid = false;
+var hideDashes = false;
 
 var HANDLE_RELATIVE_RADIUS = 0.17; // Vertex handle radius relative to grid spacing
 var selectedHandleIndexes = [];
@@ -575,10 +578,12 @@ Shape.prototype = {
             ctx.strokeStyle = line_color;
             ctx.lineWidth=2;
             ctx.beginPath();
+            var previousP;
             for (i=0; i < this.points.length; i++) {
                 p = grid_.toPoint(this.points[i]);
-                if (i === 0) {
+                if (i === 0 || ((hideDashes || faintColor) && !previousP.visible)) {
                     ctx.moveTo(p.x, p.y);
+                    previousP = p;
                     continue;
                 }
                 ctx.lineTo(p.x, p.y);
@@ -591,25 +596,20 @@ Shape.prototype = {
                 if(p.visible){
                     ctx.strokeStyle = line_color;
                     ctx.setLineDash([]);
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
                 }
-                else {
-                  if (faintColor) {
-                    ctx.strokeStyle = 'black';
-                  } else {
+                else if (!hideDashes && !faintColor) {
                     ctx.strokeStyle = '#444';
-                  }
-                  ctx.setLineDash([5, 10]);
-                  ctx.beginPath();
-                  ctx.moveTo(p.x, p.y);
+                    ctx.setLineDash([5, 10]);
                 }
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.stroke();
+                previousP = p;
             }
-            ctx.stroke();
         }
 
         // Draw vertex handles
-        if (!faintColor) {
+        if (!faintColor && !hideHandles) {
           for (i = 0; i < this.points.length; i++) {
             if (selectedHandleIndexes.indexOf(i) !== -1) {
                   color = 'red';
@@ -738,7 +738,7 @@ Grid.prototype = {
             h = this.height-1;
 
         this.ctx.save();
-        this.ctx.strokeStyle = "#282828";
+        if (!hideGrid) this.ctx.strokeStyle = "#282828";
         this.ctx.fillStyle = "#000";
         this.ctx.fillRect(0, 0, this.width, this.height);
 
@@ -1389,12 +1389,30 @@ document.addEventListener("keydown", function(evt) {
     }
 });
 
-var urlParam = window.location.search.substring(1);
-if (urlParam.length) {
-  text.value = urlParam;
+function parseUrl() {
+  var urlParam = window.location.search.substring(1);
+  return {
+    points: urlParam.replace(/speed=\d+|play=[^\[]+|points=/ig, ''),
+    speed: /speed=(\d+)/i.exec(urlParam),
+    play: /play=true/i.exec(urlParam),
+    noHandles: /handles=false/i.exec(urlParam),
+    noGrid: /grid=false/i.exec(urlParam),
+    noDashes: /dashes=false/i.exec(urlParam),
+  };
+}
+
+var parsedUrl = parseUrl();
+if (parsedUrl) {
+  text.value = parsedUrl.points;
   text.onchange();
+  if (parsedUrl.speed) speed.value = parsedUrl.speed[1];
+  if (parsedUrl.play) animate();
+  if (parsedUrl.noHandles) hideHandles = true;
+  if (parsedUrl.noGrid) hideGrid = true;
+  if (parsedUrl.noDashes) hideDashes = true;
 }
 switchTool(Tools.LINE);
+windowResize();
 
 }).call();
 
