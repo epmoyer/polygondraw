@@ -1259,7 +1259,7 @@ document.getElementById("add-button").onclick = function() {
 
 document.getElementById("delete-button").onclick = function() {
   stopAnimation();
-  if (frame === 0) return;
+  if (frame === 0 && shapes.length === 1) return;
   shapes.splice(frame, 1);
   history.splice(frame, 1);
   if (frame > shapes.length - 1) frame -= 1;
