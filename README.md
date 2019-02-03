@@ -15,7 +15,9 @@ Anchor               |  Toggle Grid Snap  | S             | Toggle snapping to t
 Circular Left Arrow  |  Undo              | U             | Undo
 Circular Right Arrow |  Redo              | R             | Redo
 Hand                 |  Pan               | H             | Pan canvas
-Scale                |  Scale             | X             | Apply a scale factor to polygon (can be a number or math expression i.e. 2, 0.5, or 1/3)
+Scale                |  _(N/A)_           | X             | Apply a scale factor to polygon (can be a number or math expression i.e. 2, 0.5, or 1/3)
+Flip X               |  _(N/A)_           | _(N/A)_       | Flip all x coordinates
+Flip Y               |  _(N/A)_           | _(N/A)_       | Flip all y coordinates
 Trash                |  Clear             | _(N/A)_       | Clear all vertices.
 Brushes              |  Color             | _(N/A)_       | Set a color
 

@@ -36,6 +36,8 @@
       <li id="refresh" title="Delete All"><i class="fa fa-trash-o"></i></li>
       <li id="hand" title="H: Hand"><i class="fa fa-hand-paper-o"></i></li>
       <li id="scale" title="X: Scale"><i class="fa fa-balance-scale"></i></li>
+      <li id="flipX" title="flip X coordinates"><i class="fa fa-arrows-h"></i></li>
+      <li id="flipY" title="flip Y coordinates"><i class="fa fa-arrows-v"></i></li>
     </ul>
 
     <!-- <ol style="bottom:89px;left:10px;">
@@ -1209,11 +1211,21 @@ document.getElementById("refresh").onclick = function() {
         redraw();
     }
 };
-document.getElementById("undo").onclick = function() {
-    undo();
-};
-document.getElementById("redo").onclick = function() {
-    redo();
+document.getElementById("undo").onclick = undo;
+document.getElementById("redo").onclick = redo;
+document.getElementById("flipX").onclick = function() { flip({ x: true }); }
+document.getElementById("flipY").onclick = function() { flip({ y: true }); }
+var flip = function(options) {
+  var parsed = JSON.parse('[' + text.value + ']');
+  var transformed = [];
+  for (var i = 0, length = parsed.length; i < length; i++) {
+    var point = parsed[i];
+    var isEven = i % 2 === 0;
+    if (point < PEN_UP && ((options.x && isEven) || (options.y && !isEven)))  point *= -1;
+    transformed.push(point);
+  }
+  text.value = transformed.join(DELIMITER);
+  text.onchange();
 };
 
 document.getElementById("prev-frame-visible").onclick = function() {
