@@ -323,7 +323,6 @@ function redo(){
 function switchTool(newTool){
     currentTool = newTool;
     var shouldResetSelectedHandleIndexes = true;
-    redraw();
     switch(currentTool){
         case Tools.MOVE:
           setCurrentCanvasClass('move', buttonArrows);
@@ -352,10 +351,9 @@ function switchTool(newTool){
           previousButton = undefined;
           break;
     }
-    if (shouldResetSelectedHandleIndexes) {
-      selectedHandleIndexes = [];
-      redraw();
-    }
+    if (shouldResetSelectedHandleIndexes) selectedHandleIndexes = [];
+    if (tempVisibility) clearTempVisibility(tempVisibility.state);
+    redraw();
 }
 
 function redraw(){
@@ -928,7 +926,7 @@ window.onmousedown = function(evt) {
         case Tools.MOVE:
             var selectedHandleIndex = indexForPoint(click);
             if (selectedHandleIndex === -1) {
-              selectedHandleIndexes = [];
+              if (!evt.shiftKey) selectedHandleIndexes = [];
               mouseIsDown = false;
               break;
             }
@@ -972,6 +970,7 @@ window.onmousedown = function(evt) {
                 }
                 // Add the new point
                 shape.addPointAfterIndex(matchIndex, click);
+                updateValidVisbilitiesFor(shape);
                 history[frame].commit(shape.points);
             }
             break;
@@ -980,6 +979,7 @@ window.onmousedown = function(evt) {
             var index = indexForPoint(click);
             if (index === -1) break;
             shape.deletePoint(index);
+            updateValidVisbilitiesFor(shape);
             history[frame].commit(shape.points);
             break;
 
@@ -1021,6 +1021,15 @@ window.onmousedown = function(evt) {
     redraw();
 };
 
+var updateValidVisbilitiesFor = function(shape) {
+  for (var i = 0, length = shape.points.length; i < length; i++) {
+    var point = shape.points[i];
+    if (!point.visible && !canSetVisibilityForIndex(i, shape)) {
+      point.visible = true;
+    }
+  }
+};
+
 var canSetVisibilityForIndex = function(index, shape) {
   // First point may not be invisible
   // Two consecutive points may not be invisible
@@ -1028,7 +1037,7 @@ var canSetVisibilityForIndex = function(index, shape) {
   return ((index>0 && shape.points[index-1].visible) &&
     !(shape.points.length-1>index && !shape.points[index+1].visible) &&
     (index < shape.points.length-2));
-}
+};
 
 var indexForPoint = function(point) {
   var shape = currentShape();
