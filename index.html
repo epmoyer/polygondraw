@@ -1091,8 +1091,23 @@ window.onmousemove = function(evt) {
       var zoomValue = parseInt(form.zoom.value);
       var gridDivisionValue = parseInt(form.grid.value);
       var amount = 1 / zoomValue * gridDivisionValue;
-      panX = drag.panX + Math.floor((x - drag.x) * amount);
-      panY = drag.panY + Math.floor((y - drag.y) * amount);
+      var xDiff = Math.abs(x - drag.x);
+      var yDiff = Math.abs(y - drag.y);
+
+      if (!drag.verticalLock)   panX = drag.panX + Math.floor((x - drag.x) * amount);
+      if (!drag.horizontalLock) panY = drag.panY + Math.floor((y - drag.y) * amount);
+
+      if (evt.shiftKey && !drag.horizontalLock && !drag.verticalLock) {
+        if (xDiff > yDiff) {
+          drag.horizontalLock = true;
+        } else if (yDiff > xDiff) {
+          drag.verticalLock = true;
+        }
+      } else if (!evt.shiftKey && (drag.horizontalLock || drag.verticalLock)) {
+        drag.horizontalLock = false;
+        drag.verticalLock = false;
+      }
+
       grid.set(parseInt(zoomValue));
       redraw();
     } else if (currentTool === Tools.VISIBILITY) {
