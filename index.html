@@ -38,6 +38,7 @@
       <li id="scale" title="X: Scale"><i class="fa fa-balance-scale"></i></li>
       <li id="flipX" title="flip X coordinates"><i class="fa fa-arrows-h"></i></li>
       <li id="flipY" title="flip Y coordinates"><i class="fa fa-arrows-v"></i></li>
+      <li id="rotate" title="rotate"><i class="fa fa-refresh"></i></li>
     </ul>
 
     <!-- <ol style="bottom:89px;left:10px;">
@@ -1208,6 +1209,7 @@ var buttonEyeSlash = document.getElementById("eye-slash");
 var buttonAnchor = document.getElementById("anchor");
 var buttonHand = document.getElementById("hand");
 var buttonScale = document.getElementById("scale");
+var buttonRotate = document.getElementById("rotate");
 
 buttonPencil.onclick = function() {
     switchTool(Tools.LINE);
@@ -1255,6 +1257,26 @@ buttonScale.onclick = function() {
     text.value = points;
     text.onchange();
   }
+};
+buttonRotate.onclick = function() {
+  var angle = Math.PI / 2;
+  var points = JSON.parse('[' + text.value + ']');
+  var cos = Math.cos(angle);
+  var sin = Math.sin(angle);
+  var rotated = [];
+  for (var i = 0, length = points.length - 1; i < length; i += 2) {
+    var x = points[i];
+    var y = points[i + 1];
+    if (x < PEN_UP && y < PEN_UP) {
+      rotated.push((cos * x) - (sin * y));
+      rotated.push((sin * x) - (cos * y));
+    } else {
+      rotated.push(x);
+      rotated.push(y);
+    }
+  }
+  text.value = rotated;
+  text.onchange();
 };
 var color_index;
 for(color_index = 1; color_index<=16; color_index++){
