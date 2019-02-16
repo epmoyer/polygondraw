@@ -891,19 +891,8 @@ text.onchange = function() {
   }
 };
 
-form.zoom.oninput = function() {
-    // Responds during slide Firefox, Safari, Chrome
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    grid.set(parseInt(this.value));
-    redraw();
-};
-
-form.zoom.onchange = function() {
-    // IE10 support (IE10 does not support oninput)
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    grid.set(parseInt(this.value));
-    redraw();
-};
+form.zoom.oninput = updateMagnification;
+form.zoom.onchange = updateMagnification;
 
 window.onmouseup = function(evt) {
   drag.active = false;
@@ -1477,25 +1466,47 @@ document.addEventListener("keydown", function(evt) {
             snap_enabled = !snap_enabled;
             redraw();
             break;
-        case 88:
+        case 88: // 'X'
             buttonScale.onclick();
             break;
-        case 37:
+        case 37: // <-
             if (evt.shiftKey) {
               switchToFrame(0);
             } else {
               switchToPreviousFrame();
             }
             break;
-        case 39:
+        case 39: // ->
             if (evt.shiftKey) {
               switchToFrame(shapes.length - 1);
             } else {
               switchToNextFrame();
             }
             break;
+        case 189: // '-'
+            if (evt.shiftKey) {
+              zoomBy(-1);
+            }
+            break; // '+'
+        case 187:
+            if (evt.shiftKey) {
+              zoomBy(1);
+            }
+            break;
     }
 });
+
+function zoomBy(amount) {
+  var zoomLevel = parseInt(form.zoom.value);
+  form.zoom.value = zoomLevel + amount;
+  updateMagnification();
+};
+
+function updateMagnification(evt) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  grid.set(parseInt(form.zoom.value));
+  redraw();
+};
 
 function parseUrl() {
   var urlParam = window.location.search.substring(1);
