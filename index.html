@@ -1485,12 +1485,20 @@ document.addEventListener("keydown", function(evt) {
             break;
         case 189: // '-'
             if (evt.shiftKey) {
-              zoomBy(-1);
+              if (evt.ctrlKey) {
+                zoomBy(-10);
+              } else {
+                zoomBy(-1);
+              }
             }
             break; // '+'
         case 187:
             if (evt.shiftKey) {
-              zoomBy(1);
+              if (evt.ctrlKey) {
+                zoomBy(10);
+              } else {
+                zoomBy(1);
+              }
             }
             break;
     }

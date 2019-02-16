@@ -23,7 +23,7 @@ Brushes              |  Color             | _(N/A)_       | Set a color
 
 # Grid Controls
 * The bottom slider controls the grid subdivision level. There are four levels of subdivision. Changing the subdivision results in the all points on all frames being dynamically altered so that they stay in the same location.
-* The slider second from the bottom controls the current magnification level (this does not alter the points) + and - keys also adjust magnification.
+* The slider second from the bottom controls the current magnification level (this does not alter the points).  Hot keys are +/- (holding ctrl while pressing + or - adjusts by larger zoom amount).
 
 # Animation Controls
 Above the magnification slider is a small slider for the animation speed.
