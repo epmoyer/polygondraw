@@ -1030,6 +1030,37 @@ window.onmousedown = function(evt) {
     redraw();
 };
 
+window.ondblclick = function(evt) {
+    var x = evt.x - 5;
+    var y = evt.y - 5;
+
+    if (0 > x || canvas.width < x ||
+        0 > y || canvas.height < y
+    ) {
+        return;
+    }
+
+    var click = grid.translate(x, y);
+    var index, i, len;
+    var shape = currentShape();
+    switch(currentTool){
+        case Tools.MOVE:
+            var selectedHandleIndex = indexForPoint(click);
+            if (selectedHandleIndex !== -1) {
+              var point = shape.points[selectedHandleIndex];
+              var length = eval(prompt("Enter number of points to select from current point:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, ''));
+              if (length === -1 || length > shape.points.length - selectedHandleIndex) {
+                length = shape.points.length - selectedHandleIndex;
+              }
+              for (var i = selectedHandleIndex + 1; i < selectedHandleIndex + length; i++) {
+                selectedHandleIndexes.push(i);
+              }
+            }
+            redraw();
+            break;
+    };
+};
+
 var updateValidVisbilitiesFor = function(shape) {
   for (var i = 0, length = shape.points.length; i < length; i++) {
     var point = shape.points[i];
