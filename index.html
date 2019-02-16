@@ -434,12 +434,15 @@ function redraw(){
     var frameText = 'Frame ' + (frame + 1) + '/' + shapes.length;
     if (interval) frameText += ' (ANIMATING)';
     ctx.fillText(frameText, x_pos, y_pos);
-    ctx.restore();
-    text.value = getFrameAtIndex(frame).join(DELIMITER);
     y_pos += y_step;
     ctx.fillText('GRID LEVEL: ' + gridDivision.value, x_pos, y_pos);
     y_pos += y_step;
     ctx.fillText('PAN: (' + Math.floor(panX) + ', ' + Math.floor(panY) + ')', x_pos, y_pos);
+    if (selectedHandleIndexes.length) {
+      y_pos += y_step;
+      ctx.fillText('LAST POINT: ' + selectedHandleIndexes[selectedHandleIndexes.length - 1], x_pos, y_pos);
+    }
+    ctx.restore();
 }
 
 // DataObjs
@@ -615,8 +618,10 @@ Shape.prototype = {
         // Draw vertex handles
         if (!faintColor && !hideHandles) {
           for (i = 0; i < this.points.length; i++) {
+            var showHandleText = false;
             if (selectedHandleIndexes.indexOf(i) !== -1) {
                   color = 'red';
+                  showHandleText = true;
               }
               else if (i == this.points.length - 1){
                   color = 'blue';
@@ -634,6 +639,13 @@ Shape.prototype = {
               ctx.arc(p.x, p.y, HANDLE_RELATIVE_RADIUS * grid.size, 0, 2 * Math.PI, false);
               ctx.fill();
               ctx.stroke();
+              if (showHandleText) {
+                ctx.font = (HANDLE_RELATIVE_RADIUS * grid.size) + 'px Helvetica';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = 'white';
+                ctx.fillText(i, p.x, p.y);
+              }
           }
         }
         ctx.restore();
