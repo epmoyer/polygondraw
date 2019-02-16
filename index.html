@@ -376,7 +376,8 @@ function redraw(){
     if (nextFrameVisible && nextFrame) {
       nextFrame.draw(grid, "rgba(255, 128, 128, " + nextAlpha + ")");
     }
-    currentShape().draw(grid);
+    var shape = currentShape();
+    shape.draw(grid);
     drawPoints();
 
     ctx.save();
@@ -437,7 +438,9 @@ function redraw(){
     ctx.fillText('PAN: (' + Math.floor(panX) + ', ' + Math.floor(panY) + ')', x_pos, y_pos);
     if (selectedHandleIndexes.length) {
       y_pos += y_step;
-      ctx.fillText('LAST POINT: ' + selectedHandleIndexes[selectedHandleIndexes.length - 1], x_pos, y_pos);
+      var index = selectedHandleIndexes[selectedHandleIndexes.length - 1];
+      var point = shape.points[index];
+      ctx.fillText('POINT: ' + index + ' (' + point.x + ', ' + point.y + ')', x_pos, y_pos);
     }
     ctx.restore();
     text.value = getFrameAtIndex(frame).join(DELIMITER);
