@@ -41,10 +41,6 @@
       <li id="rotate" title="rotate"><i class="fa fa-refresh"></i></li>
     </ul>
 
-    <!-- <ol style="bottom:89px;left:10px;">
-        <li><i class="fa fa-file fa-rotate-180"></i></li><li><i class="fa fa-trash-o"></i></li>
-    </ol> -->
-
     <ul style="top:80px;left:10px;">
         <li id="color:1" style="background-color:#2020FF"><i class="fa fa-paint-brush" title="Color: BLUE"></i>
         <li id="color:2" style="background-color:#FFFFFF"><i class="fa fa-paint-brush" title="Color: WHITE"></i>
@@ -444,6 +440,7 @@ function redraw(){
       ctx.fillText('LAST POINT: ' + selectedHandleIndexes[selectedHandleIndexes.length - 1], x_pos, y_pos);
     }
     ctx.restore();
+    text.value = getFrameAtIndex(frame).join(DELIMITER);
 }
 
 // DataObjs
@@ -1026,7 +1023,6 @@ window.onmousedown = function(evt) {
             history[frame].commit(shape.points);
             break;
     }
-
 
     text.blur();
     redraw();
