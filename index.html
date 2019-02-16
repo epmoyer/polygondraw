@@ -132,7 +132,7 @@ var Styles = {
     NORMALIZED: 2,
     ONE_NORMALIZED: 3
 };
-var shapes, frame, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
+var shapes, frame, grid, history, currentTool = undefined, mousePos={x:0,y:0}, snap_enabled=true;
 var lastMovedPoint;
 var hideHandles = false;
 var hideGrid = false;
@@ -323,11 +323,17 @@ function redo(){
 }
 
 function switchTool(newTool){
+    if (currentTool === newTool) {
+      redraw();
+      return;
+    }
+    var oldTool = currentTool;
     currentTool = newTool;
     var shouldResetSelectedHandleIndexes = true;
     switch(currentTool){
         case Tools.MOVE:
           setCurrentCanvasClass('move', buttonArrows);
+          if (oldTool == Tools.HAND) shouldResetSelectedHandleIndexes = false;
           break;
         case Tools.LINE:
           setCurrentCanvasClass('pencil', buttonPencil);
@@ -481,8 +487,6 @@ Shape.prototype = {
                 pending_color = null;
             }
         }
-        // Start in MOVE mode if starting with an existing dataset
-        currentTool = Tools.MOVE;
     },
 
     addPointToEnd: function(position) {
@@ -867,7 +871,11 @@ text.onchange = function() {
   }
 
   history[frame].commit(currentShape().points);
-  redraw();
+  if (currentTool === Tools.LINE) {
+    switchTool(Tools.MOVE);
+  } else {
+    redraw();
+  }
 };
 
 form.zoom.oninput = function() {
@@ -1004,7 +1012,6 @@ window.onmousedown = function(evt) {
             var index = indexForPoint(click);
             if (canSetVisibilityForIndex(index, shape)) {
               shape.points[index].visible = !shape.points[index].visible;
-              redraw();
               history[frame].commit(shape.points);
             }
           }
