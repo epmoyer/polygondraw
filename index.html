@@ -1237,17 +1237,21 @@ buttonHand.ondblclick = function() {
 };
 buttonScale.onclick = function() {
   var scaleFactor = eval(prompt("Enter scale factor:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, ''));
-  if (!isNaN(scaleFactor)) {
-    var points = JSON.parse('[' + text.value + ']');
-    for (var i = 0, length = points.length; i < length; i++) {
-      if (points[i] < PEN_UP) { points[i] *= scaleFactor; }
-    }
-    text.value = points;
-    text.onchange();
+  if (isNaN(scaleFactor)) return;
+
+  var points = JSON.parse('[' + text.value + ']');
+  for (var i = 0, length = points.length; i < length; i++) {
+    if (points[i] < PEN_UP) { points[i] *= scaleFactor; }
   }
+  text.value = points;
+  text.onchange();
 };
+
 buttonRotate.onclick = function() {
-  var angle = Math.PI / 2;
+  var degrees = eval(prompt("Enter degrees:", "0").replace(/[^\d\(\)\+\-\*\/%\.]/g, ''));
+  if (isNaN(degrees)) return;
+
+  var angle = degrees * Math.PI / 180;
   var points = JSON.parse('[' + text.value + ']');
   var cos = Math.cos(angle);
   var sin = Math.sin(angle);
@@ -1256,8 +1260,11 @@ buttonRotate.onclick = function() {
     var x = points[i];
     var y = points[i + 1];
     if (x < PEN_UP && y < PEN_UP) {
-      rotated.push((cos * x) - (sin * y));
-      rotated.push((sin * x) - (cos * y));
+      var rotatedX = (cos * x) - (sin * y);
+      var rotatedY = (sin * x) + (cos * y);
+
+      rotated.push(rotatedX);
+      rotated.push(rotatedY);
     } else {
       rotated.push(x);
       rotated.push(y);
