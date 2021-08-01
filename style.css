@@ -11,6 +11,7 @@ input:focus,textarea:focus,button{
 .cursor-pencil { cursor: crosshair; }
 .cursor-hand { cursor: grab; }
 .cursor-move { cursor: pointer; }
+.cursor-curve { cursor: pointer; }
 .cursor-forbidden { cursor: not-allowed; }
 .cursor-add, .cursor-cut { cursor: cell; }
 

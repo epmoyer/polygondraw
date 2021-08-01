@@ -18,7 +18,7 @@
       </div>
       <input type="range" id="speed" name="speed" min="100" max="1000" value="500" title="animation playback speed">
       <input type="range" id="zoom" name="zoom" min="2" max="200" value="20" title="magnification">
-      <input type="range" id="grid" name="grid" min="1" max="4" value="1" title="grid subdivision">
+      <input type="range" id="grid" name="grid" min="1" max="32" value="1" title="grid subdivision">
     </form>
     <ul style="top:10px;left:10px" class="tools">
       <li id="arrows" title="M: Move"><i class="fa fa-arrows"></i></li>
@@ -28,6 +28,7 @@
       <li id="crosshairs" title="O: Change Origin"><i class="fa fa-crosshairs"></i></li>
       <li id="eye-slash" title="V: Toggle Visibility"><i class="fa fa-eye-slash"></i></li>
       <li id="anchor" title="S: Toggle Grid Snap"><i class="fa fa-anchor"></i></li>
+      <li id="curve" title="S: Toggle Bezier Curve"><i class="fa fa-circle-o"></i></li>
     </ul>
 
     <ul style="top:45px;left:10px;" class="tools">
@@ -100,6 +101,8 @@ img {
 (function() {
 
 var VERSION = "3.4";
+var ACTIVE = 'active';
+var BLANK = '';
 
 // Init GUI Components
 var canvas = document.querySelector("canvas");
@@ -122,6 +125,7 @@ var Tools = {
     VISIBILITY: 5,
     COLORIZE: 6,
     HAND: 7,
+    CURVE: 8,
 };
 var Styles = {
     ARRAY: 0,
@@ -134,6 +138,7 @@ var lastMovedPoint;
 var hideHandles = false;
 var hideGrid = false;
 var hideDashes = false;
+var curves = false;
 
 var HANDLE_RELATIVE_RADIUS = 0.17; // Vertex handle radius relative to grid spacing
 var selectedHandleIndexes = [];
@@ -207,6 +212,9 @@ function getFrameAtIndex(index, options) {
     if (point.visible === false) {
       points.push(PEN_COMMAND);
       points.push(PEN_UP);
+    } else if (point.color) {
+      points.push(PEN_COMMAND);
+      points.push(PEN_COLOR0 + point.color);
     }
   }
   return points;
@@ -220,8 +228,8 @@ var previousButton;
 function setCurrentCanvasClass(canvasClass, element) {
   canvas.className = 'cursor-' + canvasClass;
   if (element) {
-    if (previousButton) previousButton.className = '';
-    element.className = 'active';
+    if (previousButton) previousButton.className = BLANK;
+    element.className = ACTIVE;
     previousButton = element;
   }
 }
@@ -251,43 +259,6 @@ function formatCoordinate(coordinate){
     //   9.12  -> "9.12"
     //   9.123 -> "9.12"
     return Number(coordinate.toFixed(2)).toString();
-}
-
-function drawPoints() {
-    var i, point;
-    var output_items = [];
-    var color_items, point_items;
-    var shape = currentShape();
-
-    for (i = 0; i < shape.points.length; i++) {
-        point = shape.points[i];
-
-        point_items = [formatCoordinate(point.x), formatCoordinate(point.y)];
-        if(point.color){
-            color_items = [PEN_COMMAND, PEN_COLOR0 + point.color];
-        }
-        else{
-            color_items = [];
-        }
-
-        if (i === 0){
-            output_items = output_items.concat(color_items);
-            output_items = output_items.concat(point_items);
-        }
-        else{
-            output_items = output_items.concat(point_items);
-            output_items = output_items.concat(color_items);
-        }
-
-        if(!point.visible){
-            output_items.push(PEN_COMMAND);
-            output_items.push(PEN_UP);
-        }
-    }
-
-    for (i = 0; i < output_items.length; i++) {
-        output_items[i] = output_items[i].toString();
-    }
 }
 
 function closestPoint(searchPoint) {
@@ -332,6 +303,9 @@ function switchTool(newTool){
           setCurrentCanvasClass('move', buttonArrows);
           if (oldTool == Tools.HAND) shouldResetSelectedHandleIndexes = false;
           break;
+        case Tools.CURVE:
+          setCurrentCanvasClass('curve', buttonCurve);
+          break;
         case Tools.LINE:
           setCurrentCanvasClass('pencil', buttonPencil);
           break;
@@ -352,7 +326,7 @@ function switchTool(newTool){
           setCurrentCanvasClass('hand', buttonHand);
           break;
         case Tools.COLORIZE:
-          if (previousButton) previousButton.className = '';
+          if (previousButton) previousButton.className = BLANK;
           previousButton = undefined;
           break;
     }
@@ -371,14 +345,13 @@ function redraw(){
     var previousAlpha = parseInt(previousFrameOpacity.value) / 100;
     var nextAlpha = parseInt(nextFrameOpacity.value) / 100;
     if (previousFrameVisible && previousFrame) {
-      previousFrame.draw(grid, "rgba(128, 255, 255, " + previousAlpha + ")");
+      previousFrame.draw(grid, "rgba(128, 255, 255, " + previousAlpha + ")", "rgba(0, 255, 0, " + previousAlpha + ")");
     }
     if (nextFrameVisible && nextFrame) {
-      nextFrame.draw(grid, "rgba(255, 128, 128, " + nextAlpha + ")");
+      nextFrame.draw(grid, "rgba(255, 128, 128, " + nextAlpha + ")", "rgba(255, 0, 0, " + nextAlpha + ")");
     }
     var shape = currentShape();
     shape.draw(grid);
-    drawPoints();
 
     ctx.save();
     ctx.font="12px Helvetica";
@@ -566,10 +539,27 @@ Shape.prototype = {
         text.value = points.join(DELIMITER);
     },
 
-    draw: function(grid_, faintColor) {
+    draw: function(grid_, faintColor, faintCurveColor) {
         var i, p, color;
 
         ctx.save();
+
+        if (curves) {
+          var size = 10;
+          ctx.strokeStyle = 'blue';
+          ctx.beginPath();
+          p = grid_.toPoint({ x: -size, y: -size });
+          ctx.moveTo(p.x, p.y);
+          p = grid_.toPoint({ x: size, y: -size });
+          ctx.lineTo(p.x, p.y);
+          p = grid_.toPoint({ x: size, y: size });
+          ctx.lineTo(p.x, p.y);
+          p = grid_.toPoint({ x: -size, y: size });
+          ctx.lineTo(p.x, p.y);
+          p = grid_.toPoint({ x: -size, y: -size });
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
 
         // Draw lines
         if(this.points.length >= 2){
@@ -649,10 +639,29 @@ Shape.prototype = {
               }
           }
         }
+
+        if (curves && this.points.length > 1) {
+          var p0, p1, midx, midy;
+          ctx.strokeStyle = faintCurveColor ? faintCurveColor : 'magenta';
+          ctx.beginPath();
+          p0 = grid_.toPoint(this.points[0]);
+          ctx.moveTo(p0.x, p0.y);
+
+          for(var i = 1; i < this.points.length - 2; i += 1) {
+            p0 = grid_.toPoint(this.points[i]);
+            p1 = grid_.toPoint(this.points[i + 1]);
+            midx = (p0.x + p1.x) / 2;
+            midy = (p0.y + p1.y) / 2;
+            ctx.quadraticCurveTo(p0.x, p0.y, midx, midy);
+          }
+          p0 = grid_.toPoint(this.points[this.points.length - 2]);
+          p1 = grid_.toPoint(this.points[this.points.length - 1]);
+          ctx.quadraticCurveTo(p0.x, p0.y, p1.x, p1.y);
+          ctx.stroke();
+        }
+
         ctx.restore();
     },
-
-
 };
 
 var History = function(){
@@ -848,7 +857,7 @@ text.onkeydown = function(evt) {
   }
 }
 text.onchange = function() {
-  var points = text.value.replace(/[^\[\],\d\.-]/g, '');
+  var points = text.value.replace(/[^\[\],\d\.-]/g, BLANK);
   if (/\[/.test(points)) {
     var parsed;
     try {
@@ -1049,7 +1058,7 @@ window.ondblclick = function(evt) {
             var selectedHandleIndex = indexForPoint(click);
             if (selectedHandleIndex !== -1) {
               var point = shape.points[selectedHandleIndex];
-              var length = eval(prompt("Enter number of points to select from current point:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, ''));
+              var length = eval(prompt("Enter number of points to select from current point:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, BLANK));
               if (length === -1 || length > shape.points.length - selectedHandleIndex) {
                 length = shape.points.length - selectedHandleIndex;
               }
@@ -1198,7 +1207,13 @@ var buttonAnchor = document.getElementById("anchor");
 var buttonHand = document.getElementById("hand");
 var buttonScale = document.getElementById("scale");
 var buttonRotate = document.getElementById("rotate");
+var buttonCurve = document.getElementById("curve");
 
+buttonCurve.onclick = function() {
+    curves = !curves;
+    buttonCurve.className = curves ? ACTIVE : BLANK;
+    redraw();
+};
 buttonPencil.onclick = function() {
     switchTool(Tools.LINE);
 };
@@ -1236,7 +1251,7 @@ buttonHand.ondblclick = function() {
     redraw();
 };
 buttonScale.onclick = function() {
-  var scaleFactor = eval(prompt("Enter scale factor:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, ''));
+  var scaleFactor = eval(prompt("Enter scale factor:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, BLANK));
   if (isNaN(scaleFactor)) return;
 
   var points = JSON.parse('[' + text.value + ']');
@@ -1248,7 +1263,7 @@ buttonScale.onclick = function() {
 };
 
 buttonRotate.onclick = function() {
-  var degrees = eval(prompt("Enter degrees:", "0").replace(/[^\d\(\)\+\-\*\/%\.]/g, ''));
+  var degrees = eval(prompt("Enter degrees:", "0").replace(/[^\d\(\)\+\-\*\/%\.]/g, BLANK));
   if (isNaN(degrees)) return;
 
   var angle = degrees * Math.PI / 180;
@@ -1286,7 +1301,7 @@ for(color_index = 1; color_index<=16; color_index++){
 document.getElementById("refresh").onclick = function() {
     if(confirm("Clear all frames and polygon points and start over? This operation cannot be undone.")){
         switchTool(Tools.LINE);
-        text.value = '';
+        text.value = BLANK;
         shapes = [new Shape()];
         frame = 0;
         history[frame].clear();
@@ -1525,7 +1540,7 @@ function updateMagnification(evt) {
 function parseUrl() {
   var urlParam = window.location.search.substring(1);
   return {
-    points: urlParam.replace(/speed=\d+|play=[^\[]+|points=/ig, ''),
+    points: urlParam.replace(/speed=\d+|play=[^\[]+|points=/ig, BLANK),
     speed: /speed=(\d+)/i.exec(urlParam),
     play: /play=true/i.exec(urlParam),
     noHandles: /handles=false/i.exec(urlParam),
