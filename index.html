@@ -1,42 +1,46 @@
 <!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+<html lang="en"> <head> <meta charset="UTF-8">
     <title>PolygonDraw</title>
 
     <meta name="viewport" content="user-scalable=no" />
-    <link href="https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.css" rel="stylesheet">
+   <link href="https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <!-- GUI -->
 <canvas></canvas>
-<div>
-    <form>
-        <textarea name="coords" readonly></textarea>
-        <input type="range" name="zoom" min="5" max="40">
+<div class="wrapper">
+    <form method="post">
+      <div class="textarea-container">
+        <textarea name="coords"></textarea>
+        <textarea name="frames" class="invisible">sup</textarea>
+      </div>
+      <input type="range" id="speed" name="speed" min="100" max="1000" value="500" title="animation playback speed">
+      <input type="range" id="zoom" name="zoom" min="2" max="200" value="20" title="magnification">
+      <input type="range" id="grid" name="grid" min="1" max="32" value="1" title="grid subdivision">
     </form>
-    <ul style="top:10px;left:10px">
-        <li id="arrows"><i class="fa fa-arrows" title="M: Move"></i>
-        <li id="pencil"><i class="fa fa-pencil" title="L: Line"></i>
-        <li id="plus"><i class="fa fa-plus" title="A: Add"></i>
-        <li id="scissors"><i class="fa fa-scissors" title="C: Cut"></i>
-        <li id="crosshairs"><i class="fa fa-crosshairs" title="O: Change Origin"></i>
-        <li id="eye-slash"><i class="fa fa-eye-slash" title="V: Toggle Visibility"></i>
-        <li id="anchor"><i class="fa fa-anchor" title="S: Toggle Grid Snap"></i>
-        </li>
+    <ul style="top:10px;left:10px" class="tools">
+      <li id="arrows" title="M: Move"><i class="fa fa-arrows"></i></li>
+      <li id="pencil" title="L: Line"><i class="fa fa-pencil"></i></li>
+      <li id="plus" title="A: Add"><i class="fa fa-plus"></i></li>
+      <li id="scissors" title="C: Cut"><i class="fa fa-scissors"></i></li>
+      <li id="crosshairs" title="O: Change Origin"><i class="fa fa-crosshairs"></i></li>
+      <li id="eye-slash" title="V: Toggle Visibility"><i class="fa fa-eye-slash"></i></li>
+      <li id="anchor" title="S: Toggle Grid Snap"><i class="fa fa-anchor"></i></li>
+      <li id="curve" title="S: Toggle Bezier Curve"><i class="fa fa-circle-o"></i></li>
     </ul>
 
-    <ul style="top:45px;left:10px;">
-        <li id="undo"><i class="fa fa-undo" title="U: Undo"></i>
-        <li id="redo"><i class="fa fa-repeat" title="R: Redo"></i>
-        <li id="refresh"><i class="fa fa-trash-o" title="Delete All"></i></li>
+    <ul style="top:45px;left:10px;" class="tools">
+      <li id="undo" title="U: Undo"><i class="fa fa-undo"></i></li>
+      <li id="redo" title="R: Redo"><i class="fa fa-repeat"></i></li>
+      <li id="refresh" title="Delete All"><i class="fa fa-trash-o"></i></li>
+      <li id="hand" title="H: Hand"><i class="fa fa-hand-paper-o"></i></li>
+      <li id="scale" title="X: Scale"><i class="fa fa-balance-scale"></i></li>
+      <li id="flipX" title="flip X coordinates"><i class="fa fa-arrows-h"></i></li>
+      <li id="flipY" title="flip Y coordinates"><i class="fa fa-arrows-v"></i></li>
+      <li id="rotate" title="rotate"><i class="fa fa-refresh"></i></li>
     </ul>
-
-    <!-- <ol style="bottom:89px;left:10px;">
-        <li><i class="fa fa-file fa-rotate-180"></i></li><li><i class="fa fa-trash-o"></i></li>
-    </ol> -->
 
     <ul style="top:80px;left:10px;">
         <li id="color:1" style="background-color:#2020FF"><i class="fa fa-paint-brush" title="Color: BLUE"></i>
@@ -58,11 +62,23 @@
         <li id="color:14" style="background-color:#87CEFA"><i class="fa fa-paint-brush" title="Color: LIGHTSKYBLUE"></i>
         <li id="color:15" style="background-color:#1E90FF"><i class="fa fa-paint-brush" title="Color: DODGERBLUE"></i>
         <li id="color:16" style="background-color:#ADD8E6"><i class="fa fa-paint-brush" title="Color: LIGHTBLUE"></i>
-    </ul> 
-    
-    <ul style="bottom:40px;right:11px">
-        <li id="copy"><i class="fa fa-copy" title="Open polygon in new editor instance as URL"></i>
-        <li id="clipboard"><i class="fa fa-clipboard" title="Select array text"></i>
+    </ul>
+
+    <div class="visibility-controls" style="bottom:50px;right:0px">
+        <input type="range" id="prev-frame-opacity" min="0" max="100" value="50" title="rotoscope opacity">
+        <input type="range" id="next-frame-opacity" min="0" max="100" value="50" title="rotoscope opacity">
+        <input type="checkbox" id="prev-frame-visible" title="rotoscope reveal previous frame" />
+        <input type="checkbox" id="next-frame-visible" title="rotoscope reveal next frame" />
+    </div>
+
+    <ul class="frame-controls" style="bottom:40px;right:20px">
+      <li id="add-button" title="Add new frame with existing points"><i class="fa fa-plus"></i></li>
+      <li id="delete-button" title="Delete current frame"><i class="fa fa-minus"></i></li>
+      <li id="back-button" title="Previous frame"><i class="fa fa-backward"></i></li>
+      <li id="next-button" title="Next frame"><i class="fa fa-forward"></i></li>
+      <li id="play-button" title="Play animation"><i class="fa fa-play"></i></li>
+      <li id="stop-button" title="Stop animation"><i class="fa fa-stop"></i></li>
+        <li id="clipboard-button" title="Copy all frames to clipboard"><i class="fa fa-clipboard"></i></li>
     </ul>
 </div>
 
@@ -84,14 +100,20 @@ img {
 <script>
 (function() {
 
-var VERSION = "3.2";
+var VERSION = "3.4";
+var ACTIVE = 'active';
+var BLANK = '';
 
 // Init GUI Components
 var canvas = document.querySelector("canvas");
 var div = document.querySelector("div");
 var form = document.querySelector("form");
-var text = document.querySelector("textarea");
+var text = form.coords;
 var ctx = canvas.getContext("2d");
+var speed = form.speed;
+var gridDivision = form.grid;
+var previousFrameOpacity = document.getElementById("prev-frame-opacity");
+var nextFrameOpacity = document.getElementById("next-frame-opacity");
 
 // Global vars
 var Tools = {
@@ -101,7 +123,9 @@ var Tools = {
     CUT: 3,
     ORIGIN: 4,
     VISIBILITY: 5,
-    COLORIZE: 6
+    COLORIZE: 6,
+    HAND: 7,
+    CURVE: 8,
 };
 var Styles = {
     ARRAY: 0,
@@ -109,37 +133,43 @@ var Styles = {
     NORMALIZED: 2,
     ONE_NORMALIZED: 3
 };
-var shape, grid, history, currentTool = Tools.LINE, mousePos={x:0,y:0}, snap_enabled=true;
+var shapes, frame, grid, history, currentTool = undefined, mousePos={x:0,y:0}, snap_enabled=true;
+var lastMovedPoint;
+var hideHandles = false;
+var hideGrid = false;
+var hideDashes = false;
+var curves = false;
 
 var HANDLE_RELATIVE_RADIUS = 0.17; // Vertex handle radius relative to grid spacing
-var handleIsSelected = false;
-var selectedHandleIndex = 0;
+var selectedHandleIndexes = [];
+var tempVisibility = undefined;
 
 var PEN_COMMAND = 9000;
 var PEN_UP = 7000;
 var PEN_COLOR0 = 8000;
 
 var COLORS = [
-    "#000000", // 00 (Penup)      
-    "#2020FF", // 01 BLUE         
-    "#FFFFFF", // 02 WHITE        
-    "#00FF00", // 03 GREEN        
-    "#FFFF00", // 04 YELLOW       
-    "#FF0000", // 05 RED          
-    "#00FFFF", // 06 CYAN         
-    "#FF00FF", // 07 MAGENTA      
-    "#008080", // 08 CYAN_DK          
-    "#E55300", // 09 ORANGE       
-    "#8B4513", // 10 BROWN        
-    "#808000", // 11 YELLOW_DK    
-    "#808080", // 12 GRAY         
-    "#404040", // 13 GRAY_DK      
-    "#87CEFA", // 14 LIGHTSKYBLUE 
-    "#1E90FF", // 15 DODGERBLUE   
-    "#ADD8E6", // 16 LIGHTBLUE    
+    "#000000", // 00 (Penup)
+    "#2020FF", // 01 BLUE
+    "#FFFFFF", // 02 WHITE
+    "#00FF00", // 03 GREEN
+    "#FFFF00", // 04 YELLOW
+    "#FF0000", // 05 RED
+    "#00FFFF", // 06 CYAN
+    "#FF00FF", // 07 MAGENTA
+    "#008080", // 08 CYAN_DK
+    "#E55300", // 09 ORANGE
+    "#8B4513", // 10 BROWN
+    "#808000", // 11 YELLOW_DK
+    "#808080", // 12 GRAY
+    "#404040", // 13 GRAY_DK
+    "#87CEFA", // 14 LIGHTSKYBLUE
+    "#1E90FF", // 15 DODGERBLUE
+    "#ADD8E6", // 16 LIGHTBLUE
 ];
 
 var current_selected_color = COLORS[1];
+var DELIMITER = ',';
 
 // Functions
 function windowResize() {
@@ -148,6 +178,60 @@ function windowResize() {
     div.setAttribute("style", "height:" + canvas.height + "px");
     grid.set(parseInt(form.zoom.value));
     redraw();
+}
+
+function getPointArray() {
+  var items = text.value.replace(/\s/g, '').split(DELIMITER);
+  var output = [];
+  for (var i = 0, length = items.length; i < length; i++) {
+    var item = items[i];
+    var number = Number(parseFloat(item, 10).toFixed(3));
+    if (!isNaN(number)) output.push(number);
+  }
+  return output;
+}
+
+function getAllFrames(options) {
+  var frames = [];
+  for (var i = 0, length = shapes.length; i < length; i++) {
+    var shape = shapes[i];
+    frames.push(getFrameAtIndex(i, options));
+  }
+  if (frames.length === 1) frames = frames[0];
+  return frames;
+}
+
+function getFrameAtIndex(index, options) {
+  var modifier = (options || {}).modifier || 1;
+  var shape = shapes[index];
+  var points = [];
+  for (var i = 0, len = shape.points.length; i < len; i++) {
+    var point = shape.points[i];
+    points.push(point.x * modifier);
+    points.push(point.y * modifier);
+    if (point.visible === false) {
+      points.push(PEN_COMMAND);
+      points.push(PEN_UP);
+    } else if (point.color) {
+      points.push(PEN_COMMAND);
+      points.push(PEN_COLOR0 + point.color);
+    }
+  }
+  return points;
+}
+
+function currentShape() {
+  return shapes[frame];
+}
+
+var previousButton;
+function setCurrentCanvasClass(canvasClass, element) {
+  canvas.className = 'cursor-' + canvasClass;
+  if (element) {
+    if (previousButton) previousButton.className = BLANK;
+    element.className = ACTIVE;
+    previousButton = element;
+  }
 }
 
 //---------------------------------
@@ -177,49 +261,9 @@ function formatCoordinate(coordinate){
     return Number(coordinate.toFixed(2)).toString();
 }
 
-function drawPoints() {
-    if (shape.points.length === 0) {
-        text.value = "";
-        return;
-    }
-    var i, point;
-    var output_items = [];
-    var color_items, point_items;
-
-    for (i = 0; i < shape.points.length; i++) {
-        point = shape.points[i];
-
-        point_items = [formatCoordinate(point.x), formatCoordinate(point.y)];
-        if(point.color){
-            color_items = [PEN_COMMAND, PEN_COLOR0 + point.color];
-        }
-        else{
-            color_items = [];
-        }
-
-        if (i === 0){
-            output_items = output_items.concat(color_items);
-            output_items = output_items.concat(point_items);
-        }
-        else{
-            output_items = output_items.concat(point_items);
-            output_items = output_items.concat(color_items);
-        }
-
-        if(!point.visible){
-            output_items.push(PEN_COMMAND);
-            output_items.push(PEN_UP);
-        }
-    }
-
-    for (i = 0; i < output_items.length; i++) {
-        output_items[i] = output_items[i].toString();
-    }
-    text.value = '[' + output_items.join(',') + ']';
-}
-
 function closestPoint(searchPoint) {
     // Returns null if there are 0 points in the shape
+    var shape = currentShape();
 
     var len = shape.points.length;
     var shortestDistance = 10000000000;
@@ -237,17 +281,57 @@ function closestPoint(searchPoint) {
 }
 
 function undo(){
-    shape.points = history.undo();
+    currentShape().points = history[frame].undo();
     redraw();
 }
 
 function redo(){
-    shape.points = history.redo();
+    currentShape().points = history[frame].redo();
     redraw();
 }
 
 function switchTool(newTool){
+    if (currentTool === newTool) {
+      redraw();
+      return;
+    }
+    var oldTool = currentTool;
     currentTool = newTool;
+    var shouldResetSelectedHandleIndexes = true;
+    switch(currentTool){
+        case Tools.MOVE:
+          setCurrentCanvasClass('move', buttonArrows);
+          if (oldTool == Tools.HAND) shouldResetSelectedHandleIndexes = false;
+          break;
+        case Tools.CURVE:
+          setCurrentCanvasClass('curve', buttonCurve);
+          break;
+        case Tools.LINE:
+          setCurrentCanvasClass('pencil', buttonPencil);
+          break;
+        case Tools.ADD:
+          setCurrentCanvasClass('add', buttonPlus);
+          break;
+        case Tools.CUT:
+          setCurrentCanvasClass('cut', buttonScissors);
+          break;
+        case Tools.ORIGIN:
+          setCurrentCanvasClass('origin', buttonCrosshairs);
+          break;
+        case Tools.VISIBILITY:
+          setCurrentCanvasClass('visibility', buttonEyeSlash);
+          break;
+        case Tools.HAND:
+          shouldResetSelectedHandleIndexes = false;
+          setCurrentCanvasClass('hand', buttonHand);
+          break;
+        case Tools.COLORIZE:
+          if (previousButton) previousButton.className = BLANK;
+          previousButton = undefined;
+          break;
+    }
+    if (shouldResetSelectedHandleIndexes) selectedHandleIndexes = [];
+    if (tempVisibility) clearTempVisibility(tempVisibility.state);
     redraw();
 }
 
@@ -256,9 +340,19 @@ function redraw(){
     var y_pos = 15;
     var y_step = 15;
     grid.draw();
+    var previousFrame = shapes[frame - 1] || shapes[shapes.length - 1];
+    var nextFrame = shapes[frame + 1] || shapes[0];
+    var previousAlpha = parseInt(previousFrameOpacity.value) / 100;
+    var nextAlpha = parseInt(nextFrameOpacity.value) / 100;
+    if (previousFrameVisible && previousFrame) {
+      previousFrame.draw(grid, "rgba(128, 255, 255, " + previousAlpha + ")", "rgba(0, 255, 0, " + previousAlpha + ")");
+    }
+    if (nextFrameVisible && nextFrame) {
+      nextFrame.draw(grid, "rgba(255, 128, 128, " + nextAlpha + ")", "rgba(255, 0, 0, " + nextAlpha + ")");
+    }
+    var shape = currentShape();
     shape.draw(grid);
-    drawPoints();
-    
+
     ctx.save();
     ctx.font="12px Helvetica";
 
@@ -279,6 +373,7 @@ function redraw(){
 
     // Show current tool
     var modeText = "";
+
     switch(currentTool){
         case Tools.MOVE:
             modeText = "Move";
@@ -301,62 +396,72 @@ function redraw(){
         case Tools.COLORIZE:
             modeText = "Colorize";
             break;
+        case Tools.HAND:
+            modeText = "Hand";
+            break;
     }
     ctx.fillText(modeText, x_pos, y_pos);
+    y_pos += y_step;
+    var frameText = 'Frame ' + (frame + 1) + '/' + shapes.length;
+    if (interval) frameText += ' (ANIMATING)';
+    ctx.fillText(frameText, x_pos, y_pos);
+    y_pos += y_step;
+    ctx.fillText('GRID LEVEL: ' + gridDivision.value, x_pos, y_pos);
+    y_pos += y_step;
+    ctx.fillText('PAN: (' + Math.floor(panX) + ', ' + Math.floor(panY) + ')', x_pos, y_pos);
+    if (selectedHandleIndexes.length) {
+      y_pos += y_step;
+      var index = selectedHandleIndexes[selectedHandleIndexes.length - 1];
+      var point = shape.points[index];
+      ctx.fillText('POINT: ' + index + ' (' + point.x + ', ' + point.y + ')', x_pos, y_pos);
+    }
     ctx.restore();
+    text.value = getFrameAtIndex(frame).join(DELIMITER);
 }
 
 // DataObjs
-var Shape = function(parseUrl) {
-    this.reset(parseUrl);
+var Shape = function() {
+  this.reset();
 };
+
 Shape.prototype = {
-    reset: function(parseUrl) {
+    reset: function() {
         this.points = [];
 
-        if(parseUrl){
-            // Can supply initial point data in URL following "?".
-            // For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
-            var pointsString = window.location.search.substring(1);
-            var color_index = null;
-            var pending_color = null;
-            if (pointsString !== ""){
-                var pointArray = JSON.parse(pointsString);
-                if (pointArray.length % 2 === 0){
-                    for(var i=0,len=pointArray.length; i<len; i+=2){
-                        if(pointArray[i]==PEN_COMMAND){
-                            if(pointArray[i+1]==PEN_UP){
-                               this.points[this.points.length-1].visible = false; 
-                            }
-                            else{
-                                color_index = pointArray[i+1] - PEN_COLOR0;
-                                if(color_index >=0 && color_index < COLORS.length){
-                                    if(i===0){
-                                        // If a color is specified as the very fist directive,
-                                        // then that color is applied to the next vertex (which
-                                        // will be the fist vertex in the data set).  Otherwise,
-                                        // color directives are applied to the previous vertex.
-                                        pending_color = color_index;
-                                    }
-                                    else{
-                                        this.points[this.points.length-1].color = color_index;
-                                    }
-                                } 
-                            }
+        // Can supply initial point data in URL following "?".
+        // For example: wwww.mylocation.com/polygondraw.html?[0,0,1,1]
+        var pointArray = getPointArray();
+        var color_index = null;
+        var pending_color = null;
+        for(var i=0,len=pointArray.length; i<len; i+=2){
+            if(pointArray[i]==PEN_COMMAND){
+                if(pointArray[i+1]==PEN_UP){
+                   this.points[this.points.length-1].visible = false;
+                }
+                else{
+                    color_index = pointArray[i+1] - PEN_COLOR0;
+                    if(color_index >=0 && color_index < COLORS.length){
+                        if(i===0){
+                            // If a color is specified as the very fist directive,
+                            // then that color is applied to the next vertex (which
+                            // will be the fist vertex in the data set).  Otherwise,
+                            // color directives are applied to the previous vertex.
+                            pending_color = color_index;
                         }
                         else{
-                            this.points.push({
-                                x:pointArray[i],
-                                y:pointArray[i+1],
-                                visible:true,
-                                color: pending_color ? pending_color : null
-                            });
-                            pending_color = null;
+                            this.points[this.points.length-1].color = color_index;
                         }
                     }
-                    // Start in MOVE mode if starting with an existing dataset
-                    currentTool = Tools.MOVE;
                 }
+            }
+            else{
+                this.points.push({
+                    x:pointArray[i],
+                    y:pointArray[i+1],
+                    visible:true,
+                    color: pending_color ? pending_color : null
+                });
+                pending_color = null;
             }
         }
     },
@@ -376,14 +481,14 @@ Shape.prototype = {
             position
             );
     },
-    
+
     addPointAfterIndex: function(index, position){
-        shape.points.splice(
+        currentShape().points.splice(
             index + 1,
             0,
-            {   x:position.x, 
-                y:position.y, 
-                visible:true, 
+            {   x:position.x,
+                y:position.y,
+                visible:true,
                 color:null
             });
         this._optimize();
@@ -415,8 +520,9 @@ Shape.prototype = {
     _optimize: function() {
         // Optimize the color assignments.  Color only needs to be specified once, on
         // the first node that the color is drawn TO (not from)
-        var i, point, color;
+        var i, point, color, points;
         color = null;
+        points = [];
         for (i = 0; i < this.points.length; i++) {
             point = this.points[i];
             if ((color !== null) && (point.color == color)){
@@ -425,29 +531,57 @@ Shape.prototype = {
             if (point.color !== null){
                 color = point.color;
             }
+
+            points.push(point.x);
+            points.push(point.y);
         }
+
+        text.value = points.join(DELIMITER);
     },
 
-    draw: function(grid_) {
+    draw: function(grid_, faintColor, faintCurveColor) {
         var i, p, color;
 
         ctx.save();
 
+        if (curves) {
+          var size = 10;
+          ctx.strokeStyle = 'blue';
+          ctx.beginPath();
+          p = grid_.toPoint({ x: -size, y: -size });
+          ctx.moveTo(p.x, p.y);
+          p = grid_.toPoint({ x: size, y: -size });
+          ctx.lineTo(p.x, p.y);
+          p = grid_.toPoint({ x: size, y: size });
+          ctx.lineTo(p.x, p.y);
+          p = grid_.toPoint({ x: -size, y: size });
+          ctx.lineTo(p.x, p.y);
+          p = grid_.toPoint({ x: -size, y: -size });
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+        }
+
         // Draw lines
         if(this.points.length >= 2){
-            if(this.points[0].color){
-                line_color = COLORS[this.points[0].color];
-            }
-            else{
-                line_color = 'white';
+            if (faintColor) {
+              line_color = faintColor;
+            } else {
+              if(this.points[0].color){
+                  line_color = COLORS[this.points[0].color];
+              }
+              else{
+                  line_color = 'white';
+              }
             }
             ctx.strokeStyle = line_color;
             ctx.lineWidth=2;
             ctx.beginPath();
+            var previousP;
             for (i=0; i < this.points.length; i++) {
                 p = grid_.toPoint(this.points[i]);
-                if (i === 0) {
+                if (i === 0 || ((hideDashes || faintColor) && !previousP.visible)) {
                     ctx.moveTo(p.x, p.y);
+                    previousP = p;
                     continue;
                 }
                 ctx.lineTo(p.x, p.y);
@@ -460,45 +594,74 @@ Shape.prototype = {
                 if(p.visible){
                     ctx.strokeStyle = line_color;
                     ctx.setLineDash([]);
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
                 }
-                else{
-                    ctx.strokeStyle = 'gray';
+                else if (!hideDashes && !faintColor) {
+                    ctx.strokeStyle = '#444';
                     ctx.setLineDash([5, 10]);
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
                 }
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.stroke();
+                previousP = p;
             }
-            ctx.stroke();
         }
 
         // Draw vertex handles
-        for (i = 0; i < this.points.length; i++) {
-            if (handleIsSelected && i===selectedHandleIndex){
-                color = 'red';
-            }
-            else if (i == this.points.length - 1){
-                color = 'blue';
-            }
-            else if (i == 0){
-                color = 'cyan';
-            }
-            else {
-                color = 'green';
-            }
-            p = grid_.toPoint(this.points[i]);
-            ctx.fillStyle = color;
-            ctx.strokeStyle = color;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, HANDLE_RELATIVE_RADIUS * grid.size, 0, 2 * Math.PI, false);
-            ctx.fill();
-            ctx.stroke();
-        }       
+        if (!faintColor && !hideHandles) {
+          for (i = 0; i < this.points.length; i++) {
+            var showHandleText = false;
+            if (selectedHandleIndexes.indexOf(i) !== -1) {
+                  color = 'red';
+                  showHandleText = true;
+              }
+              else if (i == this.points.length - 1){
+                  color = 'blue';
+              }
+              else if (i == 0){
+                  color = 'cyan';
+              }
+              else {
+                  color = 'green';
+              }
+              p = grid_.toPoint(this.points[i]);
+              ctx.fillStyle = color;
+              ctx.strokeStyle = color;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, HANDLE_RELATIVE_RADIUS * grid.size, 0, 2 * Math.PI, false);
+              ctx.fill();
+              ctx.stroke();
+              if (showHandleText) {
+                ctx.font = (HANDLE_RELATIVE_RADIUS * grid.size) + 'px Helvetica';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = 'white';
+                ctx.fillText(i, p.x, p.y);
+              }
+          }
+        }
+
+        if (curves && this.points.length > 1) {
+          var p0, p1, midx, midy;
+          ctx.strokeStyle = faintCurveColor ? faintCurveColor : 'magenta';
+          ctx.beginPath();
+          p0 = grid_.toPoint(this.points[0]);
+          ctx.moveTo(p0.x, p0.y);
+
+          for(var i = 1; i < this.points.length - 2; i += 1) {
+            p0 = grid_.toPoint(this.points[i]);
+            p1 = grid_.toPoint(this.points[i + 1]);
+            midx = (p0.x + p1.x) / 2;
+            midy = (p0.y + p1.y) / 2;
+            ctx.quadraticCurveTo(p0.x, p0.y, midx, midy);
+          }
+          p0 = grid_.toPoint(this.points[this.points.length - 2]);
+          p1 = grid_.toPoint(this.points[this.points.length - 1]);
+          ctx.quadraticCurveTo(p0.x, p0.y, p1.x, p1.y);
+          ctx.stroke();
+        }
+
         ctx.restore();
     },
-
-
 };
 
 var History = function(){
@@ -511,44 +674,48 @@ History.prototype = {
         this.tail = -1;
     },
 
+    copy: function(history){
+      this.tail = history.tail;
+      this.pointsHistory = [];
+      for (var i = 0, length = history.pointsHistory.length; i < length; i++) {
+        var pointsFromHistoryEntry = history.pointsHistory[i];
+        var cloned = history.clone(pointsFromHistoryEntry);
+        this.pointsHistory.push(cloned);
+      }
+    },
+
     commit: function(points){
-        // Remove any history after the current tail
-        var splice_index = this.tail + 1;
-        if(splice_index <= this.pointsHistory.length - 1){
-            this.pointsHistory.splice(splice_index, this.pointsHistory.length - splice_index);
+      var pointsCanBeCommited = function(pointsA, pointsB) {
+        if (pointsA.length !== pointsB.length) return true;
+        for (var i = 0, length = pointsA.length; i < length; i++) {
+          var pointA = pointsA[i];
+          var pointB = pointsB[i];
+          for (var key in pointA) {
+            if (pointA.hasOwnProperty(key) && pointA[key] !== pointB[key]) return true;
+          }
         }
-        // Add the new point set to the history
-        var clone = this.clone(points);
-        this.pointsHistory.push(this.clone(points));
-        this.tail = this.pointsHistory.length - 1;
+        return false;
+      }
+
+      var lastPoints = this.pointsHistory[this.tail];
+      if (lastPoints && !pointsCanBeCommited(points, lastPoints)) return;
+      this.pointsHistory = this.pointsHistory.slice(0, this.tail + 1);
+      this.pointsHistory.push(this.clone(points));
+      this.tail = this.pointsHistory.length - 1;
     },
 
     undo: function(){
-        --this.tail;
-        if(this.tail <= -1){
-            this.tail = -1;
-            return [];
-        }
-        else {
-            return this.clone(this.pointsHistory[this.tail]);
-        }
+      if (this.tail >= 0) this.tail -= 1;
+      return this.clone(this.pointsHistory[this.tail]);
     },
 
     redo: function(){
-        ++this.tail;
-        if(this.tail>this.pointsHistory.length-1){
-            this.tail = this.pointsHistory.length-1;
-            console.log("Nothing to redo.");
-        }
-        if(this.tail === -1){
-            return [];
-        }
-        else {
-            return this.clone(this.pointsHistory[this.tail]);
-        }
+      if (this.tail < this.pointsHistory.length - 1) this.tail += 1;
+      return this.clone(this.pointsHistory[this.tail]);
     },
 
     clone: function(points){
+        if (!points) return [];
         var pointsClone = [];
         for(var i=0, len=points.length; i<len; i++){
             pointsClone.push({
@@ -568,7 +735,7 @@ var Grid = function() {
 };
 Grid.prototype = {
     set: function(size) {
-        this.size = size;
+        this.size = Math.round(size * gridFraction);
 
         var wt = Math.ceil(canvas.width / size);
         var ht = Math.ceil(canvas.height / size);
@@ -579,8 +746,8 @@ Grid.prototype = {
         this.y = Math.round((canvas.height - this.height)/2);
 
         this.origo = {
-            x: Math.round(this.width/(this.size*2)),
-            y: Math.round(this.height/(this.size*2))
+            x: Math.round(this.width/(this.size*2)) + panX,
+            y: Math.round(this.height/(this.size*2)) + panY,
         };
 
         this.canvas.width = this.width;
@@ -597,7 +764,7 @@ Grid.prototype = {
             h = this.height-1;
 
         this.ctx.save();
-        this.ctx.strokeStyle = "#282828";
+        if (!hideGrid) this.ctx.strokeStyle = "#282828";
         this.ctx.fillStyle = "#000";
         this.ctx.fillRect(0, 0, this.width, this.height);
 
@@ -659,28 +826,93 @@ Grid.prototype = {
 
 
 // Setup
-shape = new Shape(true);
+var gridFraction = 1 / parseInt(gridDivision.value);
+var lastGridFraction = 1;
+var drag = {
+  active: false,
+  x: 0,
+  y: 0,
+  panX: 0,
+  panY: 0,
+};
+var panX = 0;
+var panY = 0;
+var mouseIsDown = false;
+var previousFrameVisible = false;
+var nextFrameVisible = false;
+
+shapes = [new Shape()];
 grid = new Grid();
-history = new History();
+history = [new History()];
+frame = 0;
 
 windowResize();
 redraw();
 
 window.onresize = windowResize;
 
+text.onkeydown = function(evt) {
+  if (evt.which === 13) {
+    text.blur();
+  }
+}
+text.onchange = function() {
+  var points = text.value.replace(/[^\[\],\d\.-]/g, BLANK);
+  if (/\[/.test(points)) {
+    var parsed;
+    try {
+      parsed = JSON.parse(points);
+    } catch (error) {
+      alert(error);
+      return;
+    }
+    var frames;
+    if (typeof(parsed[0]) === 'object') {
+      frames = parsed;
+    } else {
+      frames = [parsed];
+    }
 
-form.zoom.oninput = function() {
-    // Responds during slide Firefox, Safari, Chrome
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    grid.set(parseInt(this.value));
+    var currentFrame = frame;
+    text.value = frames[0].join(DELIMITER);
+    currentShape().reset();
+
+    for (var i = 1, length = frames.length; i < length; i++) {
+      frame += 1;
+      text.value = frames[i].join(DELIMITER);
+      shapes.push(new Shape());
+      var newHistory = new History();
+      newHistory.clear();
+      newHistory.commit(currentShape().points);
+      history.push(newHistory);
+    }
+    frame = currentFrame;
+
+  } else {
+    currentShape().reset();
+  }
+
+  history[frame].commit(currentShape().points);
+  if (currentTool === Tools.LINE) {
+    switchTool(Tools.MOVE);
+  } else {
     redraw();
+  }
 };
 
-form.zoom.onchange = function() {
-    // IE10 support (IE10 does not support oninput)
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    grid.set(parseInt(this.value));
-    redraw();
+form.zoom.oninput = updateMagnification;
+form.zoom.onchange = updateMagnification;
+
+window.onmouseup = function(evt) {
+  drag.active = false;
+  mouseIsDown = false;
+  var shape = currentShape();
+  if (currentTool === Tools.MOVE && lastMovedPoint) {
+    var point = shape.points[selectedHandleIndexes[selectedHandleIndexes.length - 1]];
+    if (point && (lastMovedPoint.x !== point.x || lastMovedPoint.y !== point.y)) {
+      history[frame].commit(shape.points);
+    }
+  }
 };
 
 window.onmousedown = function(evt) {
@@ -695,23 +927,52 @@ window.onmousedown = function(evt) {
 
     var click = grid.translate(x, y);
     var index, i, len;
+    var shape = currentShape();
+    mouseIsDown = true;
     switch(currentTool){
+        case Tools.HAND:
+            if (!drag.active) {
+                drag.x = x;
+                drag.y = y;
+                drag.panX = panX;
+                drag.panY = panY;
+                drag.active = true;
+            }
+            break;
         case Tools.LINE:
             shape.addPointToEnd(click);
-            history.commit(shape.points);
+            history[frame].commit(shape.points);
             break;
 
         case Tools.MOVE:
-            if (handleIsSelected){
-                handleIsSelected = false;
-                history.commit(shape.points);
+            var selectedHandleIndex = indexForPoint(click);
+            if (selectedHandleIndex === -1) {
+              if (!evt.shiftKey) selectedHandleIndexes = [];
+              mouseIsDown = false;
+              break;
             }
-            else{
-                index = closestPoint(click);
-                if(index !== null){
-                    handleIsSelected = true;
-                    selectedHandleIndex = index;
+            var point = shape.points[selectedHandleIndex];
+            lastMovedPoint = { x: point.x, y: point.y };
+            var index = selectedHandleIndexes.indexOf(selectedHandleIndex);
+
+            var isSelected = index !== -1;
+
+            if (isSelected) {
+              selectedHandleIndexes.splice(index, 1);
+            } else if (!evt.shiftKey) {
+              selectedHandleIndexes = [];
+            }
+
+            selectedHandleIndexes.push(selectedHandleIndex);
+
+            if (evt.shiftKey) {
+              for (var i = 0, length = shape.points.length; i < length; i++) {
+                var toCompare = shape.points[i];
+
+                if (selectedHandleIndexes.indexOf(i) === -1 && point.x === toCompare.x && point.y === toCompare.y) {
+                  selectedHandleIndexes.push(i);
                 }
+              }
             }
             break;
 
@@ -730,51 +991,111 @@ window.onmousedown = function(evt) {
                 }
                 // Add the new point
                 shape.addPointAfterIndex(matchIndex, click);
-                history.commit(shape.points);
+                updateValidVisbilitiesFor(shape);
+                history[frame].commit(shape.points);
             }
             break;
 
         case Tools.CUT:
-            index = closestPoint(click);
+            var index = indexForPoint(click);
+            if (index === -1) break;
             shape.deletePoint(index);
-            history.commit(shape.points);
+            updateValidVisbilitiesFor(shape);
+            history[frame].commit(shape.points);
             break;
 
         case Tools.ORIGIN:
             // Move the origin to the click location
             for (i=0, len = shape.points.length; i<len; i++){
-                shape.points[i].x -= click.x;
-                shape.points[i].y -= click.y;
+              shape.points[i].x -= click.x;
+              shape.points[i].y -= click.y;
             }
-            history.commit(shape.points);
+            history[frame].commit(shape.points);
             break;
         case Tools.VISIBILITY:
             // Toggle visibility of closest point
-            index = closestPoint(click);
-            if(index !== null){
-                // First point may not be invisible
-                // Two consecutive points may not be invisible
-                // Last and next-to-last point may not be invisible
-                if(   (index>0 && shape.points[index-1].visible)
-                   && !(shape.points.length-1>index && !shape.points[index+1].visible)
-                   && (index < shape.points.length-2))
-                {
-                    shape.points[index].visible = !shape.points[index].visible;
-                }
+          if (tempVisibility) {
+            if (canSetVisibilityForIndex(tempVisibility.index, shape)) {
+              clearTempVisibility(!tempVisibility.state);
+              history[frame].commit(shape.points);
             }
-            history.commit(shape.points);
-            break;
+          } else {
+            var index = indexForPoint(click);
+            if (canSetVisibilityForIndex(index, shape)) {
+              shape.points[index].visible = !shape.points[index].visible;
+              history[frame].commit(shape.points);
+            }
+          }
+          break;
         case Tools.COLORIZE:
             // Toggle visibility of closest point
-            index = closestPoint(click);
-            if(index !== null){
-                shape.colorizePoint(index, current_selected_color);
-                history.commit(shape.points);
-            }
+            var index = indexForPoint(click);
+            if (index === -1) break;
+            shape.colorizePoint(index, current_selected_color);
+            history[frame].commit(shape.points);
             break;
     }
 
+    text.blur();
     redraw();
+};
+
+window.ondblclick = function(evt) {
+    var x = evt.x - 5;
+    var y = evt.y - 5;
+
+    if (0 > x || canvas.width < x ||
+        0 > y || canvas.height < y
+    ) {
+        return;
+    }
+
+    var click = grid.translate(x, y);
+    var index, i, len;
+    var shape = currentShape();
+    switch(currentTool){
+        case Tools.MOVE:
+            var selectedHandleIndex = indexForPoint(click);
+            if (selectedHandleIndex !== -1) {
+              var point = shape.points[selectedHandleIndex];
+              var length = eval(prompt("Enter number of points to select from current point:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, BLANK));
+              if (length === -1 || length > shape.points.length - selectedHandleIndex) {
+                length = shape.points.length - selectedHandleIndex;
+              }
+              for (var i = selectedHandleIndex + 1; i < selectedHandleIndex + length; i++) {
+                selectedHandleIndexes.push(i);
+              }
+            }
+            redraw();
+            break;
+    };
+};
+
+var updateValidVisbilitiesFor = function(shape) {
+  for (var i = 0, length = shape.points.length; i < length; i++) {
+    var point = shape.points[i];
+    if (!point.visible && !canSetVisibilityForIndex(i, shape)) {
+      point.visible = true;
+    }
+  }
+};
+
+var canSetVisibilityForIndex = function(index, shape) {
+  // First point may not be invisible
+  // Two consecutive points may not be invisible
+  // Last and next-to-last point may not be invisible
+  return ((index>0 && shape.points[index-1].visible) &&
+    !(shape.points.length-1>index && !shape.points[index+1].visible) &&
+    (index < shape.points.length-2));
+};
+
+var indexForPoint = function(point) {
+  var shape = currentShape();
+  for (var i = shape.points.length - 1; i >= 0; i--) {
+    var currentPoint = shape.points[i];
+    if (currentPoint.x === point.x && currentPoint.y === point.y) return i;
+  }
+  return -1;
 };
 
 window.onmousemove = function(evt) {
@@ -789,6 +1110,7 @@ window.onmousemove = function(evt) {
 
     mousePos = grid.translate(x, y);
     redraw();
+    var shape = currentShape();
 
     if (currentTool === Tools.LINE && shape.points.length > 0) {
         var c = grid.toPoint(shape.getLastPoint());
@@ -799,35 +1121,172 @@ window.onmousemove = function(evt) {
         ctx.moveTo(c.x, c.y);
         ctx.lineTo(x, y);
         ctx.stroke();
-    }
-    else if (currentTool === Tools.MOVE && handleIsSelected) {
-        shape.points[selectedHandleIndex].x = mousePos.x;
-        shape.points[selectedHandleIndex].y = mousePos.y;
+    } else if (currentTool === Tools.MOVE && mouseIsDown && selectedHandleIndexes.length) {
+      var index = selectedHandleIndexes.length - 1;
+      var selectedHandleIndex = selectedHandleIndexes[index];
+      var deltaX = mousePos.x - shape.points[selectedHandleIndex].x;
+      var deltaY = mousePos.y - shape.points[selectedHandleIndex].y;
+      shape.points[selectedHandleIndex].x = mousePos.x;
+      shape.points[selectedHandleIndex].y = mousePos.y;
+
+      while (index > 0) {
+        index -= 1;
+        selectedHandleIndex = selectedHandleIndexes[index];
+        shape.points[selectedHandleIndex].x += deltaX;
+        shape.points[selectedHandleIndex].y += deltaY;
+      }
+    } else if (currentTool === Tools.HAND && drag.active) {
+      var zoomValue = parseInt(form.zoom.value);
+      var gridDivisionValue = parseInt(form.grid.value);
+      var amount = 1 / zoomValue * gridDivisionValue;
+      var xDiff = Math.abs(x - drag.x);
+      var yDiff = Math.abs(y - drag.y);
+
+      if (!drag.verticalLock)   panX = drag.panX + Math.floor((x - drag.x) * amount);
+      if (!drag.horizontalLock) panY = drag.panY + Math.floor((y - drag.y) * amount);
+
+      if (evt.shiftKey && !drag.horizontalLock && !drag.verticalLock) {
+        if (xDiff > yDiff) {
+          drag.horizontalLock = true;
+        } else if (yDiff > xDiff) {
+          drag.verticalLock = true;
+        }
+      } else if (!evt.shiftKey && (drag.horizontalLock || drag.verticalLock)) {
+        drag.horizontalLock = false;
+        drag.verticalLock = false;
+      }
+
+      grid.set(parseInt(zoomValue));
+      redraw();
+    } else if (currentTool === Tools.VISIBILITY) {
+      var index = indexForPoint(mousePos);
+      if (index === -1) {
+        if (tempVisibility) clearTempVisibility(tempVisibility.state);
+      } else {
+        setCurrentCanvasClass('visibility');
+        if (tempVisibility && tempVisibility.index === index) {
+          return;
+        } else if (!canSetVisibilityForIndex(index, shape)) {
+          setCurrentCanvasClass('forbidden');
+          return;
+        }
+
+        if (tempVisibility && tempVisibility.index !== index) clearTempVisibility(tempVisibility.state);
+        var point = shape.points[index];
+        tempVisibility = {
+          index: index,
+          state: point.visible,
+          point: point,
+        };
+
+        var flashInterval = setInterval(function() {
+          var point = tempVisibility.point;
+          point.visible = !point.visible;
+          redraw();
+        }, 250);
+
+        tempVisibility.stopFlashing = function() { clearInterval(flashInterval); };
+      }
     }
 };
 
+var clearTempVisibility = function(visible) {
+  tempVisibility.stopFlashing();
+  tempVisibility.point.visible = visible;
+  tempVisibility = undefined;
+}
+
 // Button
-document.getElementById("pencil").onclick = function() {
+var buttonPencil = document.getElementById("pencil");
+var buttonArrows = document.getElementById("arrows");
+var buttonPlus = document.getElementById("plus");
+var buttonScissors = document.getElementById("scissors");
+var buttonCrosshairs = document.getElementById("crosshairs");
+var buttonEyeSlash = document.getElementById("eye-slash");
+var buttonAnchor = document.getElementById("anchor");
+var buttonHand = document.getElementById("hand");
+var buttonScale = document.getElementById("scale");
+var buttonRotate = document.getElementById("rotate");
+var buttonCurve = document.getElementById("curve");
+
+buttonCurve.onclick = function() {
+    curves = !curves;
+    buttonCurve.className = curves ? ACTIVE : BLANK;
+    redraw();
+};
+buttonPencil.onclick = function() {
     switchTool(Tools.LINE);
 };
-document.getElementById("arrows").onclick = function() {
+buttonArrows.onclick = function() {
     switchTool(Tools.MOVE);
 };
-document.getElementById("plus").onclick = function() {
+buttonPlus.onclick = function() {
     switchTool(Tools.ADD);
 };
-document.getElementById("scissors").onclick = function() {
+buttonScissors.onclick = function() {
     switchTool(Tools.CUT);
 };
-document.getElementById("crosshairs").onclick = function() {
+buttonCrosshairs.onclick = function() {
     switchTool(Tools.ORIGIN);
 };
-document.getElementById("eye-slash").onclick = function() {
+buttonEyeSlash.onclick = function() {
     switchTool(Tools.VISIBILITY);
 };
-document.getElementById("anchor").onclick = function() {
+buttonAnchor.onclick = function() {
     snap_enabled = !snap_enabled;
     redraw();
+};
+buttonHand.onclick = function() {
+    switchTool(Tools.HAND);
+};
+buttonHand.ondblclick = function() {
+    panX = 0;
+    panY = 0;
+    drag.x = 0;
+    drag.y = 0;
+    drag.panX = 0;
+    drag.panY = 0;
+    drag.active = false;
+    grid.set(parseInt(form.zoom.value));
+    redraw();
+};
+buttonScale.onclick = function() {
+  var scaleFactor = eval(prompt("Enter scale factor:", "1").replace(/[^\d\(\)\+\-\*\/%\.]/g, BLANK));
+  if (isNaN(scaleFactor)) return;
+
+  var points = JSON.parse('[' + text.value + ']');
+  for (var i = 0, length = points.length; i < length; i++) {
+    if (points[i] < PEN_UP) { points[i] *= scaleFactor; }
+  }
+  text.value = points;
+  text.onchange();
+};
+
+buttonRotate.onclick = function() {
+  var degrees = eval(prompt("Enter degrees:", "0").replace(/[^\d\(\)\+\-\*\/%\.]/g, BLANK));
+  if (isNaN(degrees)) return;
+
+  var angle = degrees * Math.PI / 180;
+  var points = JSON.parse('[' + text.value + ']');
+  var cos = Math.cos(angle);
+  var sin = Math.sin(angle);
+  var rotated = [];
+  for (var i = 0, length = points.length - 1; i < length; i += 2) {
+    var x = points[i];
+    var y = points[i + 1];
+    if (x < PEN_UP && y < PEN_UP) {
+      var rotatedX = (cos * x) - (sin * y);
+      var rotatedY = (sin * x) + (cos * y);
+
+      rotated.push(rotatedX);
+      rotated.push(rotatedY);
+    } else {
+      rotated.push(x);
+      rotated.push(y);
+    }
+  }
+  text.value = rotated;
+  text.onchange();
 };
 var color_index;
 for(color_index = 1; color_index<=16; color_index++){
@@ -839,31 +1298,162 @@ for(color_index = 1; color_index<=16; color_index++){
     })(color_index);
 }
 
-document.getElementById("clipboard").onclick = function() {
-    text.focus();
-    text.select();
-};
-document.getElementById("copy").onclick = function() {
-    var url = window.location.href.split("?")[0] + "?" + text.value;
-    window.open(url);
-};
 document.getElementById("refresh").onclick = function() {
-    if(confirm("Clear all polygon points and start over? This operation cannot be undone.")){
+    if(confirm("Clear all frames and polygon points and start over? This operation cannot be undone.")){
         switchTool(Tools.LINE);
-        shape = new Shape(false);
-        history.clear();
+        text.value = BLANK;
+        shapes = [new Shape()];
+        frame = 0;
+        history[frame].clear();
         redraw();
     }
 };
-document.getElementById("undo").onclick = function() {
-    undo();
+document.getElementById("undo").onclick = undo;
+document.getElementById("redo").onclick = redo;
+document.getElementById("flipX").onclick = function() { flip({ x: true }); }
+document.getElementById("flipY").onclick = function() { flip({ y: true }); }
+var flip = function(options) {
+  var parsed = JSON.parse('[' + text.value + ']');
+  var transformed = [];
+  for (var i = 0, length = parsed.length; i < length; i++) {
+    var point = parsed[i];
+    var isEven = i % 2 === 0;
+    if (point < PEN_UP && ((options.x && isEven) || (options.y && !isEven)))  point *= -1;
+    transformed.push(point);
+  }
+  text.value = transformed.join(DELIMITER);
+  text.onchange();
 };
-document.getElementById("redo").onclick = function() {
-    redo();
+
+document.getElementById("prev-frame-visible").onclick = function() {
+  previousFrameVisible = !previousFrameVisible;
+  redraw();
 };
+
+document.getElementById("next-frame-visible").onclick = function() {
+  nextFrameVisible = !nextFrameVisible;
+  redraw();
+};
+
+var switchToPreviousFrame = function() {
+  switchToFrame(frame - 1);
+};
+
+var switchToNextFrame = function() {
+  switchToFrame(frame + 1);
+};
+
+var switchToFrame = function(newFrame) {
+  if (newFrame < 0 || newFrame > shapes.length - 1) return;
+  stopAnimation();
+  frame = newFrame;
+  selectedHandleIndexes = [];
+  redraw();
+};
+
+document.getElementById("back-button").onclick = switchToPreviousFrame;
+document.getElementById("next-button").onclick = switchToNextFrame;
+
+document.getElementById("add-button").onclick = function() {
+  stopAnimation();
+  var previousHistory = history[frame];
+  frame += 1;
+  shapes.splice(frame, 0, new Shape());
+  var newHistory = new History();
+  newHistory.copy(previousHistory);
+  history.splice(frame, 0, newHistory);
+  selectedHandleIndexes = [];
+  redraw();
+};
+
+document.getElementById("delete-button").onclick = function() {
+  stopAnimation();
+  if (frame === 0 && shapes.length === 1) return;
+  shapes.splice(frame, 1);
+  history.splice(frame, 1);
+  if (frame > shapes.length - 1) frame -= 1;
+  selectedHandleIndexes = [];
+  redraw();
+};
+
+document.getElementById("clipboard-button").onclick = function() {
+  var currentGridDivisionValue = gridDivision.value;
+  gridDivision.value = 1;
+  gridDivision.onchange();
+  var frames = getAllFrames();
+  form.frames.value = JSON.stringify(frames);
+  form.frames.select();
+  if (document.execCommand('copy')) {
+    alert('copied ' + shapes.length + ' frames to clipboard!')
+  }
+  gridDivision.value = currentGridDivisionValue;
+  gridDivision.onchange();
+};
+
+var interval;
+var currentSpeed;
+var animate = function() {
+  selectedHandleIndexes = [];
+  if (interval || shapes.length <= 1) return;
+  currentSpeed = 1000 - (parseInt(speed.value) || 0);
+  interval = setInterval(function() {
+    frame += 1;
+    if (frame >= shapes.length) frame = 0;
+    redraw();
+  }, currentSpeed);
+};
+var stopAnimation = function() {
+  if (typeof(interval) !== undefined) clearInterval(interval);
+  interval = undefined;
+  redraw();
+};
+var restartAnimation = function() {
+  if (!interval || currentSpeed === (parseInt(speed.value, 10) || 0)) return;
+  stopAnimation();
+  animate();
+};
+
+var updateGridFraction = function() {
+  var tool = currentTool;
+  gridDivisionValue = parseInt(gridDivision.value);
+  gridFraction = 1 / gridDivisionValue;
+  grid.set(parseInt(form.zoom.value));
+  var modifier = gridDivisionValue * lastGridFraction;
+  var frames = getAllFrames({ modifier : modifier });
+  if (shapes.length > 1) {
+    var currentFrame = frame;
+    for (var i = 0, length = frames.length; i < length; i++) {
+      if (i === currentFrame) continue;
+      text.value = frames[i].join(DELIMITER);
+      frame = i;
+      currentShape().reset();
+    }
+    frame = currentFrame;
+    text.value = (frames[frame] || []).join(DELIMITER);
+  } else {
+    text.value = frames.join(DELIMITER);
+  }
+  currentShape().reset();
+  lastGridFraction = gridFraction;
+  switchTool(tool);
+};
+
+document.getElementById("play-button").onclick = animate;
+document.getElementById("stop-button").onclick = stopAnimation;
+
+speed.onchange = restartAnimation;
+speed.oninput  = restartAnimation;
+previousFrameOpacity.onchange = redraw;
+previousFrameOpacity.oninput = redraw;
+nextFrameOpacity.onchange = redraw;
+nextFrameOpacity.oninput = redraw;
+
+gridDivision.onchange = updateGridFraction;
+gridDivision.oninput  = updateGridFraction;
 
 // Keyboard handler
 document.addEventListener("keydown", function(evt) {
+  if (document.activeElement === text || evt.metaKey) return;
     switch(evt.keyCode){
         case 77: // "M"
         case 27: // <escape>
@@ -871,6 +1461,9 @@ document.addEventListener("keydown", function(evt) {
             break;
         case 76: // "L"
             switchTool(Tools.LINE);
+            break;
+        case 72: // "H"
+            switchTool(Tools.HAND);
             break;
         case 65: // "A"
             switchTool(Tools.ADD);
@@ -894,10 +1487,83 @@ document.addEventListener("keydown", function(evt) {
             snap_enabled = !snap_enabled;
             redraw();
             break;
+        case 88: // 'X'
+            buttonScale.onclick();
+            break;
+        case 37: // <-
+            if (evt.shiftKey) {
+              switchToFrame(0);
+            } else {
+              switchToPreviousFrame();
+            }
+            break;
+        case 39: // ->
+            if (evt.shiftKey) {
+              switchToFrame(shapes.length - 1);
+            } else {
+              switchToNextFrame();
+            }
+            break;
+        case 189: // '-'
+            if (evt.shiftKey) {
+              if (evt.ctrlKey) {
+                zoomBy(-10);
+              } else {
+                zoomBy(-1);
+              }
+            }
+            break; // '+'
+        case 187:
+            if (evt.shiftKey) {
+              if (evt.ctrlKey) {
+                zoomBy(10);
+              } else {
+                zoomBy(1);
+              }
+            }
+            break;
     }
 });
 
+function zoomBy(amount) {
+  var zoomLevel = parseInt(form.zoom.value);
+  form.zoom.value = zoomLevel + amount;
+  updateMagnification();
+};
+
+function updateMagnification(evt) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  grid.set(parseInt(form.zoom.value));
+  redraw();
+};
+
+function parseUrl() {
+  var urlParam = window.location.search.substring(1);
+  return {
+    points: urlParam.replace(/speed=\d+|play=[^\[]+|points=/ig, BLANK),
+    speed: /speed=(\d+)/i.exec(urlParam),
+    play: /play=true/i.exec(urlParam),
+    noHandles: /handles=false/i.exec(urlParam),
+    noGrid: /grid=false/i.exec(urlParam),
+    noDashes: /dashes=false/i.exec(urlParam),
+  };
+}
+
+var parsedUrl = parseUrl();
+if (parsedUrl) {
+  text.value = parsedUrl.points;
+  text.onchange();
+  if (parsedUrl.speed) speed.value = parsedUrl.speed[1];
+  if (parsedUrl.play) animate();
+  if (parsedUrl.noHandles) hideHandles = true;
+  if (parsedUrl.noGrid) hideGrid = true;
+  if (parsedUrl.noDashes) hideDashes = true;
+}
+switchTool(Tools.LINE);
+windowResize();
+
 }).call();
+
 </script>
 </body>
 </html>
